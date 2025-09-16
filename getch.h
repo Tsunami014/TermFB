@@ -1,5 +1,5 @@
-#ifndef GETCH_CROSS_H
-#define GETCH_CROSS_H
+#ifndef GETCH_H
+#define GETCH_H
 
 char getch(void);
 

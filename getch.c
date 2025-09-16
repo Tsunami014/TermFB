@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "getch.h"
 
 #ifdef _WIN32
     #include <conio.h>
