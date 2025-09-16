@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <locale.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -7,11 +8,15 @@
 #include "getch.h"
 #include "listdir.h"
 
-void printScrn(directory* dir) {
+int printScrn(directory* dir) {
     wprintf(L"\033[2J\033[H");
     fflush(stdout);
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    if (w.ws_col <= 4) {
+        perror("Terminal too thin!");
+        return 0;
+    }
 
     int midIdx = w.ws_col/2;
 
@@ -39,16 +44,25 @@ void printScrn(directory* dir) {
         if (row >= dir->length) {
             wprintf(L"%ls%ls", mtRowBegin, mtRowEnd);
         } else {
-            size_t sze = (int)(ln1-strlen(dir->items[row])) - 1;
+            size_t sze;  // Size of spacing
+            char xtra = ' ';
+            int tlen = strlen(dir->items[row]);
+            if (ln1 > tlen+1) {
+                sze = (int)(ln1-tlen) - 2;
+            } else {
+                sze = 0;
+                xtra = '>';
+            }
             char spacing[sze+1];
             memset(spacing, ' ', sze);
             spacing[sze] = '\0';
-            wprintf(L"│%s%s%ls", dir->items[row], spacing, mtRowEnd);
+            wprintf(L"│%.*s%c%s%ls", ln1-2, dir->items[row], xtra, spacing, mtRowEnd);
         }
     }
 
     midLine[midIdx] = L'┴';
     wprintf(L"╰%ls╯", midLine);
+    return 1;
 }
 
 int main(void) {
@@ -56,7 +70,9 @@ int main(void) {
     directory* dir = list_dir("~/");
 //     for (int i = 0; i < dir->length; i++) printf("%s\n", dir->items[i]);
     while (1) {
-        printScrn(dir);
+        if (!printScrn(dir)) {
+            exit(EXIT_FAILURE);  // Was unable to print the screen
+        }
         int chr = getch();
         //printf("%d", chr);
     }
