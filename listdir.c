@@ -14,7 +14,7 @@
 
 textList* list_dir(char *path) {
     path = expand_tilde(path);
-    textList* dir = tl.init(path);
+    textList* dir = tl.init();
 #if defined(_WIN32)
     WIN32_FIND_DATA fd;
     char pattern[MAX_PATH];
@@ -28,8 +28,7 @@ textList* list_dir(char *path) {
         if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
             sprintf(namebuf, "%s/", name);
         } else {
-            sprintf(namebuf, "%s ", name);
-            namebuf[strlen(name)+1] = '\0';  // End the string one character early
+            sprintf(namebuf, "%s\0", name);
         }
 
         tl.add(dir, namebuf);
@@ -40,14 +39,14 @@ textList* list_dir(char *path) {
     if (!d) return dir;
     struct dirent *ent;
     struct stat st;
-    int baseSze = strlen(path)+1;
+    int baseSze = strlen(path)+2;
     while ((ent = readdir(d)) != NULL) {
         char* name = ent->d_name;
         char fullpath[baseSze+strlen(name)];
         sprintf(fullpath, "%s/%s", path, name);
 
         if (stat(fullpath, &st) == 0 && S_ISDIR(st.st_mode)) {
-            char namebuf[strlen(name)+1];
+            char namebuf[strlen(name)+2];
             sprintf(namebuf, "%s/", name);
             tl.add(dir, namebuf);
         } else {

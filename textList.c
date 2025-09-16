@@ -4,37 +4,49 @@
 
 #include "textList.h"
 
-textList* dir_init(char* path) {
-    textList* d = malloc(sizeof(textList));
-    if (!d) { perror("malloc"); exit(EXIT_FAILURE); }
-    d->path = path;
-    d->length = 0;
-    d->capacity = 4;
-    d->items = malloc(d->capacity * sizeof(char*));
-    if (!d->items) { perror("malloc"); exit(EXIT_FAILURE); }
-    return d;
+textList* tl_init() {
+    textList* l = malloc(sizeof(textList));
+    l->length = 0;
+    l->startIt = NULL;
+    l->endIt = NULL;
+    return l;
 }
 
-void add_to_dir(textList* d, char* newIt) {
-    if (d->capacity == d->length) {
-        d->capacity *= 2;
-        char** tmp = realloc(d->items, d->capacity * sizeof(char*));
-        if (!tmp) { perror("realloc"); exit(EXIT_FAILURE); }
-        d->items = tmp;
+void tl_add(textList* l, char* txt) {
+    textItem* it = malloc(sizeof(textItem));
+    it->text = strdup(txt);
+    it->next = NULL;
+    if (l->length++ == 0) {
+        l->startIt = it;
+    } else {
+        l->endIt->next = it;
     }
-    d->items[d->length++] = strdup(newIt);
+    l->endIt = it;
 }
 
-void free_dir(textList* d) {
-    if (!d) return;
-    for (int i = 0; i < d->length; i++) free(d->items[i]);
-    free(d->items);
-    free(d);
+char* tl_get(textList* l, int idx) {
+    textItem* it = l->startIt;
+    for (int i = 0; i < idx; i++) {
+        it = it->next;
+    }
+    return it->text;
+}
+
+void tl_free(textList* l) {
+    if (!l) return;
+    textItem* it = l->startIt;
+    while (it != NULL) {
+        textItem* next = it->next;
+        free(it);
+        it = next;
+    }
+    free(l);
 }
 
 const struct tlDefStruct tl = {
-    .init = dir_init,
-    .add  = add_to_dir,
-    .free = free_dir
+    .init = tl_init,
+    .add  = tl_add,
+    .get  = tl_get,
+    .free = tl_free
 };
 

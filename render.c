@@ -38,13 +38,14 @@ int printScrn(textList* dir) {
     mtRowEnd[ln2-3] = L'│';
     mtRowEnd[ln2-2] = '\n';
     mtRowEnd[ln2-1] = '\0';
+    textItem* it = dir->startIt;
     for (int row = 0; row < w.ws_row-2; row++) {
-        if (row >= dir->length) {
+        if (it == NULL) {
             wprintf(L"%ls%ls", mtRowBegin, mtRowEnd);
         } else {
             size_t sze;  // Size of spacing
             char xtra = ' ';
-            int tlen = strlen(dir->items[row]);
+            int tlen = strlen(it->text);
             if (ln1 > tlen+1) {
                 sze = (int)(ln1-tlen) - 2;
             } else {
@@ -54,7 +55,8 @@ int printScrn(textList* dir) {
             char spacing[sze+1];
             memset(spacing, ' ', sze);
             spacing[sze] = '\0';
-            wprintf(L"│%.*s%c%s%ls", ln1-2, dir->items[row], xtra, spacing, mtRowEnd);
+            wprintf(L"│%.*s%c%s%ls", ln1-2, it->text, xtra, spacing, mtRowEnd);
+            it = it->next;
         }
     }
 
