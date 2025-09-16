@@ -8,8 +8,7 @@
     #include <unistd.h>
 #endif
 
-char getch()
-{
+char getch() {
 #ifdef _WIN32
     return _getch();
 #else

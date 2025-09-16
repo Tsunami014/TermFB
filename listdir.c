@@ -4,11 +4,12 @@
 #include "listdir.h"
 
 #if defined(_WIN32)
-#include <windows.h>
+    #include <windows.h>
 #else
-#include <dirent.h>
-#include <pwd.h>
-#include <unistd.h>
+    #include <dirent.h>
+    #include <sys/stat.h>
+    #include <pwd.h>
+    #include <unistd.h>
 #endif
 
 textList* list_dir(char *path) {
@@ -21,27 +22,51 @@ textList* list_dir(char *path) {
     HANDLE h = FindFirstFile(pattern, &fd);
     if (h == INVALID_HANDLE_VALUE) return dir;
     do {
-        add_to_dir(dir, fd.cFileName);
+        char* name = fd.cFileName;
+
+        char namebuf[strlen(name)+2]; /* +1 for '/' +1 for '\0' */
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            sprintf(namebuf, "%s/", name);
+        } else {
+            sprintf(namebuf, "%s ", name);
+            namebuf[strlen(name)+1] = '\0';  // End the string one character early
+        }
+
+        tl.add(dir, namebuf);
     } while (FindNextFile(h, &fd));
     FindClose(h);
 #else
     DIR *d = opendir(path);
     if (!d) return dir;
     struct dirent *ent;
+    struct stat st;
+    int baseSze = strlen(path)+1;
     while ((ent = readdir(d)) != NULL) {
-        tl.add(dir, ent->d_name);
+        char* name = ent->d_name;
+        char fullpath[baseSze+strlen(name)];
+        sprintf(fullpath, "%s/%s", path, name);
+
+        if (stat(fullpath, &st) == 0 && S_ISDIR(st.st_mode)) {
+            char namebuf[strlen(name)+1];
+            sprintf(namebuf, "%s/", name);
+            tl.add(dir, namebuf);
+        } else {
+            tl.add(dir, name);
+        }
     }
+
     closedir(d);
 #endif
+
     return dir;
 }
+
 
 char* expand_tilde(const char *path) {
     if (!path || path[0] != '~')
         return strdup(path ? path : "");
 
     const char *home = NULL;
-
 #ifdef _WIN32
     home = getenv("USERPROFILE");
     if (!home) {
@@ -62,7 +87,6 @@ char* expand_tilde(const char *path) {
         if (pw) home = pw->pw_dir;
     }
 #endif
-
     if (!home) return strdup(path+1);   /* fallback: leave as-is */
 
     size_t hlen = strlen(home);
