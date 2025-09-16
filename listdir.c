@@ -11,37 +11,9 @@
 #include <unistd.h>
 #endif
 
-directory* dir_init(char* path) {
-    directory* d = malloc(sizeof(directory));
-    if (!d) { perror("malloc"); exit(EXIT_FAILURE); }
-    d->path = path;
-    d->length = 0;
-    d->capacity = 4;
-    d->items = malloc(d->capacity * sizeof(char*));
-    if (!d->items) { perror("malloc"); exit(EXIT_FAILURE); }
-    return d;
-}
-
-void add_to_dir(directory* d, char* newIt) {
-    if (d->capacity == d->length) {
-        d->capacity *= 2;
-        char** tmp = realloc(d->items, d->capacity * sizeof(char*));
-        if (!tmp) { perror("realloc"); exit(EXIT_FAILURE); }
-        d->items = tmp;
-    }
-    d->items[d->length++] = strdup(newIt);
-}
-
-void free_dir(directory* d) {
-    if (!d) return;
-    for (int i = 0; i < d->length; i++) free(d->items[i]);
-    free(d->items);
-    free(d);
-}
-
-directory* list_dir(char *path) {
+textList* list_dir(char *path) {
     path = expand_tilde(path);
-    directory* dir = dir_init(path);
+    textList* dir = tl.init(path);
 #if defined(_WIN32)
     WIN32_FIND_DATA fd;
     char pattern[MAX_PATH];
@@ -57,7 +29,7 @@ directory* list_dir(char *path) {
     if (!d) return dir;
     struct dirent *ent;
     while ((ent = readdir(d)) != NULL) {
-        add_to_dir(dir, ent->d_name);
+        tl.add(dir, ent->d_name);
     }
     closedir(d);
 #endif

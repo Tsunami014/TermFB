@@ -8,7 +8,7 @@
 #include "getch.h"
 #include "listdir.h"
 
-int printScrn(directory* dir) {
+int printScrn(textList* dir) {
     wprintf(L"\033[2J\033[H");
     fflush(stdout);
     struct winsize w;
@@ -67,7 +67,7 @@ int printScrn(directory* dir) {
 
 int main(void) {
     setlocale(LC_ALL, "");
-    directory* dir = list_dir("~/");
+    textList* dir = list_dir("~/");
 //     for (int i = 0; i < dir->length; i++) printf("%s\n", dir->items[i]);
     while (1) {
         if (!printScrn(dir)) {
