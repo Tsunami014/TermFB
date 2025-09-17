@@ -63,21 +63,26 @@ void printScrn(screenInfo* screen) {
                 }
             } else {
                 int totlen = sectIdx-1;
-                int xtra = part == screen->length - 1;
-                if (xtra) {
+                wchar_t* xtra = L"";
+                if (part == screen->length - 1) {
                     int spare = w.ws_col - (sectIdx * screen->length) - 1;
                     totlen += spare;
+                    xtra = L"│\n";
                 }
                 text = cutoff(text, totlen);
                 int xtralen = totlen-strlen(text);
                 char extraSpaces[xtralen+1];
                 for (int i = 0; i < xtralen; i++) extraSpaces[i] = ' ';
                 extraSpaces[xtralen] = '\0';
-                if (xtra) {
-                    wprintf(L"│%s%s│\n", text, extraSpaces);
+
+                wchar_t fmt[20];  // Enough for the maximum length the string can be (arbitrary number, should always work)
+                if (screen->cursorRow == row && screen->cursorCol == part) {
+                    wcscpy(fmt, L"│\033[1m%s%s\033[0m");  // Add bold to the selected value
                 } else {
-                    wprintf(L"│%s%s", text, extraSpaces);
+                    wcscpy(fmt, L"│%s%s");
                 }
+                wcscat(fmt, xtra);
+                wprintf(fmt, text, extraSpaces);
                 free(text);
             }
         }
@@ -87,4 +92,9 @@ void printScrn(screenInfo* screen) {
         midLine[sectIdx*i-1] = L'┴';
     }
     wprintf(L"╰%ls╯", midLine);
+
+    int cursX = 2 + sectIdx*screen->cursorCol;
+    int cursY = 2 + screen->cursorRow;
+    wprintf(L"\033[%d;%dH", cursY, cursX);  // Set cursor position
+    fflush(stdout);
 }

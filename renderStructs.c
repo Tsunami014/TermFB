@@ -6,6 +6,8 @@
 screenInfo* scr_init(void) {
     screenInfo* s = malloc(sizeof(screenInfo));
     s->length = 0;
+    s->cursorCol = 0;
+    s->cursorRow = 0;
     s->cols = malloc(MAX_SCREEN_COLS * sizeof(screenCol));
     if (!s->cols) { perror("malloc"); exit(EXIT_FAILURE); }
     return s;
@@ -25,6 +27,7 @@ void scr_free(screenInfo* s) {
         switch (s->cols[i].typ) {
             case WORDLIST:
                 tl.free(s->cols[i].data);
+                break;
         }
         free(s->cols[i].data);
     }
@@ -53,6 +56,7 @@ void initialiseScreenCol(screenCol* col) {
     switch (col->typ) {
         case WORDLIST:
             col->renderData = ((textList*)col->data)->startIt;
+            return;
     }
 }
 

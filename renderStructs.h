@@ -19,6 +19,8 @@ void initialiseScreenCol(screenCol* col);
 char* stepScreenCol(screenCol* col);
 
 typedef struct {
+    int cursorCol;
+    int cursorRow;
     int length;
     screenCol* cols;
 } screenInfo;
