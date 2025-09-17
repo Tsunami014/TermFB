@@ -47,10 +47,17 @@ void printScrn(screenInfo* screen) {
     for (int i = 1; i < ln1-1; i++) mtRow[i] = ' ';
     mtRow[ln1-1] = '\0';
 
-    for (int i = 0; i < screen->length; i++) initialiseScreenCol(&screen->cols[i]);
+    int SelectedOffset;
+    for (int i = 0; i < screen->length; i++) {
+        if (screen->cursorCol == i) {
+            SC.offset(&screen->cols[i], screen->cursorRow, w.ws_row-2);
+            SelectedOffset = *(&screen->cols[i].lastOffset);
+        }
+        SC.init(&screen->cols[i]);
+    }
     for (int row = 0; row < w.ws_row-2; row++) {
         for (int part = 0; part < screen->length; part++) {
-            char* text = stepScreenCol(&screen->cols[part]);
+            char* text = SC.step(&screen->cols[part]);
             if (text == NULL) {
                 if (part == screen->length - 1) {
                     int spare = w.ws_col - (sectIdx * screen->length);
@@ -76,7 +83,7 @@ void printScrn(screenInfo* screen) {
                 extraSpaces[xtralen] = '\0';
 
                 wchar_t fmt[20];  // Enough for the maximum length the string can be (arbitrary number, should always work)
-                if (screen->cursorRow == row && screen->cursorCol == part) {
+                if (screen->cursorRow-SelectedOffset == row && screen->cursorCol == part) {
                     wcscpy(fmt, L"│\033[1m%s%s\033[0m");  // Add bold to the selected value
                 } else {
                     wcscpy(fmt, L"│%s%s");
@@ -94,7 +101,7 @@ void printScrn(screenInfo* screen) {
     wprintf(L"╰%ls╯", midLine);
 
     int cursX = 2 + sectIdx*screen->cursorCol;
-    int cursY = 2 + screen->cursorRow;
+    int cursY = 2 + screen->cursorRow - SelectedOffset;
     wprintf(L"\033[%d;%dH", cursY, cursX);  // Set cursor position
     fflush(stdout);
 }

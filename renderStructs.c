@@ -5,6 +5,74 @@
 
 #include "renderStructs.h"
 
+
+void SC_init(screenCol* col) {
+    switch (col->typ) {
+        case WORDLIST:
+            col->renderData = ((textList*)col->data)->startIt;
+            for (int i = 0; i < col->lastOffset; i++) {
+                col->renderData = ((textItem*)col->renderData)->next;
+            }
+            return;
+    }
+}
+
+
+char* SC_step(screenCol* col) {
+    switch (col->typ) {
+        case WORDLIST:
+            if (col->renderData == NULL) {
+                return NULL;
+            }
+            char* ret = ((textItem*)col->renderData)->text;
+            col->renderData = ((textItem*)col->renderData)->next;
+            return ret;
+    }
+}
+
+int SC_len(screenCol* col) {
+    switch (col->typ) {
+        case WORDLIST:
+            return ((textList*)col->data)->length;
+    }
+}
+
+void SC_offset(screenCol* col, int cursorRow, int maxRows) {
+    int hMaxRs = maxRows / 2;
+    int offset = cursorRow - hMaxRs;
+    if (offset <= 0) {
+        offset = 0;
+    } else {
+        int len = SC_len(col);
+        int maxOffset = len - maxRows;
+        if (maxOffset <= 0) {
+            offset = 0;
+        } else if (offset > maxOffset) {
+            offset = maxOffset;
+        }
+    }
+    col->lastOffset = offset;
+}
+
+void SC_free(screenCol* col) {
+    switch (col->typ) {
+        case WORDLIST:
+            tl.free(col->data);
+            return;
+    }
+}
+
+
+const struct SCDefStruct SC = {
+    .init = SC_init,
+    .step = SC_step,
+    .len = SC_len,
+    .offset = SC_offset,
+    .free = SC_free
+};
+
+
+
 screenInfo* scr_init(void) {
     screenInfo* s = malloc(sizeof(screenInfo));
     s->length = 0;
@@ -22,6 +90,7 @@ void scr_add(screenInfo* s, void* col, screenColTypes typ) {
     }
     s->cols[s->length++].typ = typ;
     s->cols[s->length-1].data = col;
+    s->cols[s->length-1].lastOffset = 0;
 }
 
 void scr_setCur(screenInfo* s, int newCol, int newRow) {
@@ -37,19 +106,7 @@ void scr_setCur(screenInfo* s, int newCol, int newRow) {
     if (newRow <= 0) {
         s->cursorRow = 0;
     } else {
-        int columnLen;
-        screenCol col = s->cols[s->cursorCol];
-        switch (col.typ) {
-            case WORDLIST:
-                columnLen = ((textList*)col.data)->length;
-                break;
-        }
-        // TODO: When I implement scrolling, do not use this at all
-        struct winsize w;
-        ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-        if (w.ws_row - 2 < columnLen) {
-            columnLen = w.ws_row - 2;
-        }
+        int columnLen = SC_len(&s->cols[s->cursorCol]);
         if (newRow >= columnLen) {
             s->cursorRow = columnLen-1;
         } else {
@@ -63,12 +120,7 @@ void scr_updCur(screenInfo* s, int dc, int dr) {
 
 void scr_free(screenInfo* s) {
     for (int i = 0; i < s->length; i++) {
-        switch (s->cols[i].typ) {
-            case WORDLIST:
-                tl.free(s->cols[i].data);
-                break;
-        }
-        free(s->cols[i].data);
+        SC.free(&s->cols[i]);
     }
     free(s);
 }
@@ -91,25 +143,4 @@ const struct scrDefStruct scr = {
     .shuffle = scr_shuffle,
     .free = scr_free
 };
-
-
-void initialiseScreenCol(screenCol* col) {
-    switch (col->typ) {
-        case WORDLIST:
-            col->renderData = ((textList*)col->data)->startIt;
-            return;
-    }
-}
-
-char* stepScreenCol(screenCol* col) {
-    switch (col->typ) {
-        case WORDLIST:
-            if (col->renderData == NULL) {
-                return NULL;
-            }
-            char* ret = ((textItem*)col->renderData)->text;
-            col->renderData = ((textItem*)col->renderData)->next;
-            return ret;
-    }
-}
 

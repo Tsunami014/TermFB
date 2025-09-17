@@ -12,11 +12,18 @@ typedef enum {
 typedef struct {
     screenColTypes typ;
     void* data;
-    void* renderData;  // This is initialised, used and freed at the renderer's request.
+    int lastOffset;
+    void* renderData;  // This is only updated, and therefore used, when rendering
 } screenCol;
 
-void initialiseScreenCol(screenCol* col);
-char* stepScreenCol(screenCol* col);
+struct SCDefStruct {
+    void (*init)(screenCol* col);
+    char* (*step)(screenCol* col);
+    int (*len)(screenCol* col);
+    void (*offset)(screenCol* col, int cursorRow, int maxRows);
+    void (*free)(screenCol* col);
+};
+extern const struct SCDefStruct SC;
 
 typedef struct {
     int cursorCol;
