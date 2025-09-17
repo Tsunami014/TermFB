@@ -107,7 +107,9 @@ void scr_setCur(screenInfo* s, int newCol, int newRow) {
         s->cursorRow = 0;
     } else {
         int columnLen = SC_len(&s->cols[s->cursorCol]);
-        if (newRow >= columnLen) {
+        if (columnLen <= 0) {
+            s->cursorRow = 0;
+        } else if (newRow >= columnLen) {
             s->cursorRow = columnLen-1;
         } else {
             s->cursorRow = newRow;

@@ -1,4 +1,3 @@
-#include <locale.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include "getch.h"
@@ -17,7 +16,6 @@ int IOK(void) {  // Ignore Other Keys (returns when an escape key was found)
 
 int main(void) {
     init_terminal();
-    setlocale(LC_ALL, "");
 
     screenInfo* screen = scr.init();
     textList* dir = list_dir("~/");

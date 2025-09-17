@@ -1,11 +1,13 @@
-#include <stdio.h>
+#include <locale.h>
 #include "getch.h"
 
 #ifdef _WIN32
     #include <conio.h>
 
     static void reset_terminal(void) {}
-    void init_terminal(void) {}
+    void init_terminal(void) {
+        setlocale(LC_ALL, "");
+    }
 #else
     #include <unistd.h>
     #include <termios.h>
@@ -21,6 +23,7 @@
 
     // Initialize terminal in raw mode
     void init_terminal(void) {
+        setlocale(LC_ALL, "");
         struct termios newt;
         tcgetattr(STDIN_FILENO, &orig_termios);
         newt = orig_termios;
