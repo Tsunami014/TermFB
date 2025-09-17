@@ -27,12 +27,12 @@ struct SCDefStruct {
 };
 extern const struct SCDefStruct SC;
 
-typedef struct {
+struct screenInfo{
     int cursorCol;
     int cursorRow;
     int length;
     screenCol* cols;
-} screenInfo;
+};
 
 struct scrDefStruct {
     screenInfo* (*init)(void);

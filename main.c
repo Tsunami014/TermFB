@@ -3,8 +3,8 @@
 
 #include "getch.h"
 #include "listdir.h"
-#include "render.h"
 #include "actions.h"
+#include "render.h"
 
 int IOK(void) {  // Ignore Other Keys (returns when an escape key was found)
     /* Ignores all other keys pressed by reading them if they exist, stopping at the escape key */
@@ -74,7 +74,7 @@ wasEscape:
             }
         }
         if (cont) {
-            onKeyPress(&screen->cols[screen->cursorCol], screen->cursorRow, chr);
+            onKeyPress(screen, &screen->cols[screen->cursorCol], screen->cursorRow, chr);
         }
     }
 }

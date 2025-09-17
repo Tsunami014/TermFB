@@ -22,6 +22,8 @@ textList* list_dir(char *path) {
     if (h == INVALID_HANDLE_VALUE) return dir;
     do {
         char* name = fd.cFileName;
+        if (strcmp(name, ".") == 0) continue;
+        if (strcmp(name, "..") == 0 && strlen(path) <= 3) continue;  // Bcos C:/ is 3 characters
 
         char namebuf[strlen(name)+2]; /* +1 for '/' +1 for '\0' */
         if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
@@ -38,11 +40,13 @@ textList* list_dir(char *path) {
     if (!d) return dir;
     struct dirent *ent;
     struct stat st;
-    int baseSze = strlen(path)+2;
+    int baseSze = strlen(path)+1;
     while ((ent = readdir(d)) != NULL) {
         char* name = ent->d_name;
+        if (strcmp(name, ".") == 0) continue;
         char fullpath[baseSze+strlen(name)];
-        sprintf(fullpath, "%s/%s", path, name);
+        sprintf(fullpath, "%s%s", path, name);
+        if (strcmp(fullpath, "/..") == 0) continue;
 
         if (stat(fullpath, &st) == 0 && S_ISDIR(st.st_mode)) {
             char namebuf[strlen(name)+2];

@@ -8,7 +8,8 @@ typedef enum {
 void init_actions(char* startingPath);
 
 typedef struct screenCol screenCol;  // Forward declaration
-void onKeyPress(screenCol* s, int cursorRow, char key);
+typedef struct screenInfo screenInfo;  // Forward declaration
+void onKeyPress(screenInfo* screen, screenCol* s, int cursorRow, char key);
 
 #endif
 

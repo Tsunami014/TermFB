@@ -17,7 +17,7 @@ void init_actions(char* startingPath) {
 }
 
 
-void onDirectoryKeyPress(screenCol* s, int cursorRow, char key) {
+void onDirectoryKeyPress(screenInfo* screen, screenCol* s, int cursorRow, char key) {
     switch (key) {
         case '\n': {
             textItem* it = ((textList*)s->data)->startIt;
@@ -54,6 +54,7 @@ void onDirectoryKeyPress(screenCol* s, int cursorRow, char key) {
                 tl.free(s->data);
                 s->data = list_dir(DVI.path);
                 tl.sort(s->data, tlSort.alphaCIAsc);
+                scr.updCur(screen, 0, 0);
             }
             break;
         }
@@ -61,10 +62,10 @@ void onDirectoryKeyPress(screenCol* s, int cursorRow, char key) {
 }
 
 
-void onKeyPress(screenCol* s, int cursorRow, char key) {
+void onKeyPress(screenInfo* screen, screenCol* s, int cursorRow, char key) {
     switch (s->use) {
         case DIRECTORY_VIEW:
-            onDirectoryKeyPress(s, cursorRow, key);
+            onDirectoryKeyPress(screen, s, cursorRow, key);
             break;
     }
 }
