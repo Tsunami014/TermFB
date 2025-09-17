@@ -37,7 +37,7 @@ char* tl_get(textList* l, int idx) {
     return it->text;
 }
 
-void tl_sort(textList* l, int (*sortFunc)(textItem** a, textItem** b)) {
+void tl_sort(textList* l, tlSortFunc sortFunc) {
     // We build a list of all the pointers
     textItem* pointers[l->length];
     textItem* curPtr = l->startIt;

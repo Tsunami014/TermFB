@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "renderStructs.h"
+#include "actions.h"
 
 
 void SC_init(screenCol* col) {
@@ -83,12 +84,13 @@ screenInfo* scr_init(void) {
     return s;
 }
 
-void scr_add(screenInfo* s, void* col, screenColTypes typ) {
+void scr_add(screenInfo* s, void* col, screenColTypes typ, screenColUses use) {
     if (s->length == MAX_SCREEN_COLS) {
         perror("Too many columns!");
         exit(EXIT_FAILURE);
     }
     s->cols[s->length++].typ = typ;
+    s->cols[s->length-1].use = use;
     s->cols[s->length-1].data = col;
     s->cols[s->length-1].lastOffset = 0;
 }
@@ -130,7 +132,8 @@ void scr_free(screenInfo* s) {
 void scr_shuffle(screenInfo* s, int* newOrder) {
     screenInfo* tmpInfo = scr_init();
     for (int i = 0; i < s->length; i++) {
-        scr_add(tmpInfo, s->cols[newOrder[i]].data, s->cols[newOrder[i]].typ);
+        screenCol col = s->cols[newOrder[i]];
+        scr_add(tmpInfo, col.data, col.typ, col.use);
     }
     scr_free(s);
     s = tmpInfo;

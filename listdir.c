@@ -13,7 +13,6 @@
 #endif
 
 textList* list_dir(char *path) {
-    path = expand_tilde(path);
     textList* dir = tl.init();
 #if defined(_WIN32)
     WIN32_FIND_DATA fd;
