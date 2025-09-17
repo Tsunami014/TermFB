@@ -28,6 +28,8 @@ typedef struct {
 struct scrDefStruct {
     screenInfo* (*init)(void);
     void (*add)(screenInfo* s, void* col, screenColTypes typ);
+    void (*setCur)(screenInfo* s, int newCol, int newRow);
+    void (*updCur)(screenInfo* s, int columnDiff, int rowDiff);
     void (*shuffle)(screenInfo* s, int* newOrder);
     void (*free)(screenInfo* s);
 };
