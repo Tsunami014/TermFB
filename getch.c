@@ -1,4 +1,5 @@
 #include <locale.h>
+#include <stdio.h>
 #include "getch.h"
 
 #ifdef _WIN32
@@ -58,3 +59,105 @@ int moreInp(void) {
     return select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv) > 0;
 #endif
 }
+
+keyReturn* getKey() {
+#ifdef _WIN32
+    int ch = _getch();
+    if (ch == 0 || ch == 0xE0) {  // special key prefix
+        int code = _getch();
+        char escKey = '\0';
+        switch (_getch()) {
+            case 0x48:
+                escKey = 'u';
+                break;
+            case 0x50:
+                escKey = 'd';
+                break;
+            case 0x4D:
+                escKey = 'r';
+                break;
+            case 0x4B:
+                escKey = 'l';
+                break;
+            default:
+                goto returnNothing;
+        }
+        keyReturn* kr = malloc(sizeof(keyReturn));
+        if (!kr) { perror("malloc"); exit(EXIT_FAILURE); }
+        kr->typ = ARROW_KEY;
+        kr->key = escKey;
+        return kr;
+    }
+    keyReturn* kr = malloc(sizeof(keyReturn));
+    if (!kr) { perror("malloc"); exit(EXIT_FAILURE); }
+    kr->typ = REGULAR_KEY;
+    kr->key = ch;
+    return kr;
+#else
+    char chr = getch();
+    if (chr == '\033') {
+        if (moreInp()) {
+            chr = getch();
+            if (chr == '[') {
+                if (!moreInp()) {
+                    // Dunno why this would ever occur, but if there's only half an escape code just ignore the rest of the keys and return nothing
+                    while (moreInp()) getch();
+                    goto returnNothing;
+                }
+                chr = getch();
+                // Escape sequence!
+                char escKey = '\0';
+                switch (chr) {
+                    case 'A':  // Up arrow
+                        escKey = 'u';
+                        break;
+                    case 'B':  // Down arrow
+                        escKey = 'd';
+                        break;
+                    case 'C':  // Right arrow
+                        escKey = 'r';
+                        break;
+                    case 'D':  // Left arrow
+                        escKey = 'l';
+                        break;
+                    default:  // Unknown escape key; just absorb the rest of the keys and return nothing
+                        while (moreInp()) getch();
+                        goto returnNothing;
+                }
+                keyReturn* kr = malloc(sizeof(keyReturn));
+                if (!kr) { perror("malloc"); exit(EXIT_FAILURE); }
+                kr->typ = ARROW_KEY;
+                kr->key = escKey;
+                return kr;
+            } else if (chr == '\033') {
+                // Escape key was pressed, but also an escape sequence is starting so just ignore the rest and return escape
+                while (moreInp()) getch();
+                goto returnEscape;
+            } else {
+                // Escape key was pressed, but another key was pressed straight after. So just ignore the next key.
+                goto returnEscape;
+            }
+        } else {
+            // Escape key was pressed
+            goto returnEscape;
+        }
+    } else {
+        keyReturn* kr = malloc(sizeof(keyReturn));
+        if (!kr) { perror("malloc"); exit(EXIT_FAILURE); }
+        kr->typ = REGULAR_KEY;
+        kr->key = chr;
+        return kr;
+    }
+#endif
+returnNothing:
+    keyReturn* nothingkr = malloc(sizeof(keyReturn));
+    if (!nothingkr) { perror("malloc"); exit(EXIT_FAILURE); }
+    nothingkr->typ = NOTHING;
+    return nothingkr;
+returnEscape:
+    keyReturn* esckr = malloc(sizeof(keyReturn));
+    if (!esckr) { perror("malloc"); exit(EXIT_FAILURE); }
+    esckr->typ = ESCAPE_KEY;
+    return esckr;
+}
+

@@ -54,7 +54,7 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, int cursorRow, char k
                 tl.free(s->data);
                 s->data = list_dir(DVI.path);
                 tl.sort(s->data, tlSort.alphaCIAsc);
-                scr.updCur(screen, 0, 0);
+                scr.setCur(screen, screen->cursorCol, 0);
             }
             break;
         }

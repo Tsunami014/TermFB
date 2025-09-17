@@ -3,7 +3,7 @@ The terminal is for performing actions on files (or running commands) and the fi
 
 This is my first completed project in C, please don't judge too harshly
 
-AI generated all of `getch` and most of `listdir`, but that's just because these are utility functions, not the actual program (that was all me)
+AI generated some platform-specific magic for basic operations (folder exploration and character handling), and occasionally helped me debug or teach me what to do (again, new to C). But I wrote (or wrote over) almost all of the code :)
 
 ## Features
 - Visual file browser

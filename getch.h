@@ -7,4 +7,19 @@ void init_terminal(void);
 char getch(void);
 int moreInp();
 
+
+typedef enum {
+    REGULAR_KEY,
+    ESCAPE_KEY,
+    ARROW_KEY,
+    NOTHING,  // There was a problem so returned NOTHING
+} keyReturnType;
+
+typedef struct {
+    char key;
+    keyReturnType typ;
+} keyReturn;
+
+keyReturn* getKey();
+
 #endif
