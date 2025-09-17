@@ -8,11 +8,13 @@
 
 int main(void) {
     setlocale(LC_ALL, "");
+    screenInfo* screen = scr.init();
     textList* dir = list_dir("~/");
+    scr.add(screen, dir, WORDLIST);
+    scr.add(screen, dir, WORDLIST);
+    scr.add(screen, dir, WORDLIST);
     while (1) {
-        if (!printScrn(dir)) {
-            exit(EXIT_FAILURE);  // Was unable to print the screen
-        }
+        printScrn(screen);
         int chr = getch();
         //printf("%d", chr);
     }

@@ -6,6 +6,7 @@
 
 textList* tl_init() {
     textList* l = malloc(sizeof(textList));
+    if (!l) { perror("malloc"); exit(EXIT_FAILURE); }
     l->length = 0;
     l->startIt = NULL;
     l->endIt = NULL;
@@ -14,6 +15,7 @@ textList* tl_init() {
 
 void tl_add(textList* l, char* txt) {
     textItem* it = malloc(sizeof(textItem));
+    if (!it) { perror("malloc"); exit(EXIT_FAILURE); }
     it->text = strdup(txt);
     it->next = NULL;
     if (l->length++ == 0) {

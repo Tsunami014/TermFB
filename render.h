@@ -1,8 +1,8 @@
 #ifndef RENDER_H
 #define RENDER_H
 
-#include "textList.h"
+#include "renderStructs.h"
 
-int printScrn(textList* dir);
+void printScrn(screenInfo* screen);
 
 #endif

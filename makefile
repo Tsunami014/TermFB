@@ -5,7 +5,7 @@ OUT=a.out
 all: build
 
 build:
-	$(CC) $(CFLAGS) -o $(OUT) main.c getch.c listdir.c textList.c render.c
+	$(CC) $(CFLAGS) -o $(OUT) main.c getch.c listdir.c textList.c render.c renderStructs.c
 
 debug: CFLAGS+=-DDEBUG_ON
 debug: build
