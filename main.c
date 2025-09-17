@@ -21,6 +21,7 @@ int main(void) {
 
     screenInfo* screen = scr.init();
     textList* dir = list_dir("~/");
+    tl.sort(dir, tlSort.alphaCIAsc);
     scr.add(screen, dir, WORDLIST);
     textList* cmds = tl.init();
     scr.add(screen, cmds, WORDLIST);
