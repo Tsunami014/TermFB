@@ -12,7 +12,11 @@ typedef enum {
 typedef struct {
     screenColTypes typ;
     void* data;
+    void* renderData;  // This is initialised, used and freed at the renderer's request.
 } screenCol;
+
+void initialiseScreenCol(screenCol* col);
+char* stepScreenCol(screenCol* col);
 
 typedef struct {
     int length;

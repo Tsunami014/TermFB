@@ -7,12 +7,24 @@
 
 #include "render.h"
 
+char* cutoff(char* text, int maxlength) {
+    if (strlen(text) <= maxlength) {
+        return strdup(text);
+    }
+    char* newText = malloc(maxlength+1); // +1 for the \0
+    if (!newText) { perror("malloc"); exit(EXIT_FAILURE); }
+    strncpy(newText, text, maxlength-1);
+    newText[maxlength-1] = '>';  // To show there is more
+    newText[maxlength] = '\0';
+    return newText;
+}
+
 void printScrn(screenInfo* screen) {
     wprintf(L"\033[2J\033[H");
     fflush(stdout);
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    if (w.ws_col <= 2*(screen->length+1)) {
+    if (w.ws_col <= 2*(screen->length)+1) {
         perror("Terminal too thin!");
         exit(EXIT_FAILURE);
     }
@@ -34,36 +46,41 @@ void printScrn(screenInfo* screen) {
     mtRow[0] = L'│';
     for (int i = 1; i < ln1-1; i++) mtRow[i] = ' ';
     mtRow[ln1-1] = '\0';
-//     textItem* it = dir->startIt;
+
+    for (int i = 0; i < screen->length; i++) initialiseScreenCol(&screen->cols[i]);
     for (int row = 0; row < w.ws_row-2; row++) {
-//         if (it == NULL) {
         for (int part = 0; part < screen->length; part++) {
-            if (part == screen->length - 1) {
-                int spare = w.ws_col - (sectIdx * screen->length);
-                char extraSpaces[spare+1];
-                for (int i = 0; i < spare; i++) extraSpaces[i] = ' ';
-                extraSpaces[spare] = '\0';
-                wprintf(L"%ls%s│\n", mtRow, extraSpaces);
+            char* text = stepScreenCol(&screen->cols[part]);
+            if (text == NULL) {
+                if (part == screen->length - 1) {
+                    int spare = w.ws_col - (sectIdx * screen->length);
+                    char extraSpaces[spare+1];
+                    for (int i = 0; i < spare; i++) extraSpaces[i] = ' ';
+                    extraSpaces[spare] = '\0';
+                    wprintf(L"%ls%s│\n", mtRow, extraSpaces);
+                } else {
+                    wprintf(L"%ls ", mtRow);
+                }
             } else {
-                wprintf(L"%ls ", mtRow);
+                int totlen = sectIdx-1;
+                int xtra = part == screen->length - 1;
+                if (xtra) {
+                    int spare = w.ws_col - (sectIdx * screen->length) - 1;
+                    totlen += spare;
+                }
+                text = cutoff(text, totlen);
+                int xtralen = totlen-strlen(text);
+                char extraSpaces[xtralen+1];
+                for (int i = 0; i < xtralen; i++) extraSpaces[i] = ' ';
+                extraSpaces[xtralen] = '\0';
+                if (xtra) {
+                    wprintf(L"│%s%s│\n", text, extraSpaces);
+                } else {
+                    wprintf(L"│%s%s", text, extraSpaces);
+                }
+                free(text);
             }
         }
-        /*} else {
-            size_t sze;  // Size of spacing
-            char xtra = ' ';
-            int tlen = strlen(it->text);
-            if (ln1 > tlen+1) {
-                sze = (int)(ln1-tlen) - 2;
-            } else {
-                sze = 0;
-                xtra = '>';
-            }
-            char spacing[sze+1];
-            memset(spacing, ' ', sze);
-            spacing[sze] = '\0';
-            wprintf(L"│%.*s%c%s%ls", ln1-2, it->text, xtra, spacing, mtRowEnd);
-            it = it->next;
-        }*/
     }
 
     for (int i = 1; i < screen->length; i++) {

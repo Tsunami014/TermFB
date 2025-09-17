@@ -17,7 +17,7 @@ void scr_add(screenInfo* s, void* col, screenColTypes typ) {
         exit(EXIT_FAILURE);
     }
     s->cols[s->length++].typ = typ;
-    s->cols[s->length].data = col;
+    s->cols[s->length-1].data = col;
 }
 
 void scr_free(screenInfo* s) {
@@ -47,4 +47,24 @@ const struct scrDefStruct scr = {
     .shuffle = scr_shuffle,
     .free = scr_free
 };
+
+
+void initialiseScreenCol(screenCol* col) {
+    switch (col->typ) {
+        case WORDLIST:
+            col->renderData = ((textList*)col->data)->startIt;
+    }
+}
+
+char* stepScreenCol(screenCol* col) {
+    switch (col->typ) {
+        case WORDLIST:
+            if (col->renderData == NULL) {
+                return NULL;
+            }
+            char* ret = ((textItem*)col->renderData)->text;
+            col->renderData = ((textItem*)col->renderData)->next;
+            return ret;
+    }
+}
 
