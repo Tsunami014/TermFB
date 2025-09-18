@@ -9,14 +9,24 @@
 
 typedef struct {
     char* path;
+    textList* curDir;
 } dirViewInfo;
 
 static dirViewInfo DVI;
 
-void init_actions(char* startingPath) {
+textList* init_actions(char* startingPath) {
     DVI.path = strdup(startingPath);
+    textList* dir = list_dir(startingPath);
+    tl.sort(dir, tlSort.alphaCIAsc);
+    DVI.curDir = tl.filter(dir, "");  // Copy
+    return dir;
 }
 
+void filter_dirSC(screenCol* s) {
+    tl.free(s->data);
+    s->data = tl.filter(DVI.curDir, s->header);
+    SC.mvSelect(s, 0);
+}
 
 void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
     if (key == '\n') {
@@ -52,9 +62,15 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
                 DVI.path = npath;
             }
             tl.free(s->data);
+            tl.free(DVI.curDir);
             s->data = list_dir(DVI.path);
             tl.sort(s->data, tlSort.alphaCIAsc);
+            DVI.curDir = tl.filter(s->data, "");  // Copy
             s->cursorY = 0;
+            s->cursorX = 0;
+            s->header = realloc(s->header, 1);  // Clear header
+            if (!s->header) { perror("realloc"); exit(EXIT_FAILURE); }
+            s->header[0] = '\0';
         }
         return;
     }
@@ -65,6 +81,7 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
         s->header = realloc(s->header, len);
         if (!s->header) { perror("realloc"); exit(EXIT_FAILURE); }
         s->cursorX--;
+        filter_dirSC(s);
         return;
     }
     if (key == '\x2E') {
@@ -73,6 +90,7 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
         memmove(s->header + s->cursorX, s->header + s->cursorX + 1, len - s->cursorX);
         s->header = realloc(s->header, len);
         if (!s->header) { perror("realloc"); exit(EXIT_FAILURE); }
+        filter_dirSC(s);
         return;
     }
     if (key != '/') {
@@ -81,6 +99,7 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
         if (!s->header) { perror("realloc"); exit(EXIT_FAILURE); }
         memmove(s->header + s->cursorX + 1, s->header + s->cursorX, nlen - s->cursorX + 1);
         s->header[s->cursorX++] = key;
+        filter_dirSC(s);
     }
 }
 

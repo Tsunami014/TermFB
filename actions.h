@@ -1,11 +1,13 @@
 #ifndef ACTIONS_H
 #define ACTIONS_H
 
+#include "textList.h"
+
 typedef enum {
     DIRECTORY_VIEW
 } screenColUses;
 
-void init_actions(char* startingPath);
+textList* init_actions(char* startingPath);
 
 typedef struct screenCol screenCol;  // Forward declaration
 typedef struct screenInfo screenInfo;  // Forward declaration

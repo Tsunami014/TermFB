@@ -20,6 +20,7 @@ struct tlDefStruct {
     void (*add)(textList* l, char* txt);
     char* (*get)(textList* l, int idx);
     void (*sort)(textList* l, tlSortFunc sortFunc);
+    textList* (*filter)(textList*l, char* filter);
     void (*free)(textList* l);
 };
 extern const struct tlDefStruct tl;  // Functions for working with text lists; use tl.init(...), tl.add(list, ...), etc.

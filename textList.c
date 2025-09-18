@@ -54,6 +54,23 @@ void tl_sort(textList* l, tlSortFunc sortFunc) {
         pointers[i-1]->next = pointers[i];
     }
     pointers[l->length - 1]->next = NULL;
+    l->endIt = pointers[l->length - 1];
+}
+
+int match(char* a, char* b) {
+    return strstr(a, b) != NULL;
+}
+
+textList* tl_filter(textList* l, char* filter) {
+    textList* ntl = tl_init();
+    textItem* it = l->startIt;
+    while (it != NULL) {
+        if (match(it->text, filter)) {
+            tl_add(ntl, it->text);
+        }
+        it = it->next;
+    }
+    return ntl;
 }
 
 void tl_free(textList* l) {
@@ -72,6 +89,7 @@ const struct tlDefStruct tl = {
     .add  = tl_add,
     .get  = tl_get,
     .sort = tl_sort,
+    .filter = tl_filter,
     .free = tl_free
 };
 

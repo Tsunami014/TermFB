@@ -11,9 +11,7 @@ int main(void) {
 
     char* startingPath = expand_tilde("~/");
     screenInfo* screen = scr.init();
-    init_actions(startingPath);
-    textList* dir = list_dir(startingPath);
-    tl.sort(dir, tlSort.alphaCIAsc);
+    textList* dir = init_actions(startingPath);
     scr.add(screen, dir, WORDLIST, DIRECTORY_VIEW);
     while (1) {
         printScrn(screen);
