@@ -37,10 +37,17 @@ void printScrn(screenInfo* screen) {
     wchar_t midLine[ln];
     for (int i = 0; i < ln-1; i++) midLine[i] = L'─';
     midLine[ln-1] = '\0';
+    wchar_t topLine[ln];
+    wmemcpy(topLine, midLine, ln);
     for (int i = 1; i < screen->length; i++) {
-        midLine[sectIdx*i - 1] = L'┬';
+        topLine[sectIdx*i - 1] = L'┬';
     }
-    wprintf(L"╭%ls╮\n", midLine);
+    char* hdr = screen->cols[screen->cursorCol].header;
+    int base = sectIdx*screen->cursorCol;
+    for (int i = 0; i < strlen(hdr); i++) {
+        topLine[base + i] = hdr[i];
+    }
+    wprintf(L"╭%ls╮\n", topLine);
 
 
     int ln1 = sectIdx;  // This is 1 character shorter so when I print it I can add an extra space or | where necessary

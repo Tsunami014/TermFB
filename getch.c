@@ -136,6 +136,11 @@ keyReturn* getKey() {
                             goto returnNothing;
                         }
                         break;
+                    case '3':
+                        if (moreInp()&&getch()=='~') {
+                            chr = '\x2E';
+                            goto regularKey;
+                        }
                     case 'A':  // Up arrow
                         escKey = 'u';
                         break;
@@ -170,6 +175,7 @@ keyReturn* getKey() {
             goto returnEscape;
         }
     } else {
+regularKey:
         keyReturn* kr = malloc(sizeof(keyReturn));
         if (!kr) { perror("malloc"); exit(EXIT_FAILURE); }
         kr->typ = REGULAR_KEY;

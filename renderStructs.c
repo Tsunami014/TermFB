@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -67,8 +68,21 @@ void SC_move_selection(screenCol* col, int chngRows) {
     }
     col->cursorY = new;
 }
+void SC_move_Header_Cursor(screenCol* col, int dx) {
+    int new = col->cursorX + dx;
+    if (new <= 0) {
+        new = 0;
+    } else {
+        int max = strlen(col->header);
+        if (new > max) {
+            new = max;
+        }
+    }
+    col->cursorX = new;
+}
 
 void SC_free(screenCol* col) {
+    free(col->header);
     switch (col->typ) {
         case WORDLIST:
             tl.free(col->data);
@@ -83,6 +97,7 @@ const struct SCDefStruct SC = {
     .len = SC_len,
     .offset = SC_offset,
     .mvSelect = SC_move_selection,
+    .mvHCurs = SC_move_Header_Cursor,
     .free = SC_free
 };
 
@@ -102,13 +117,16 @@ void scr_add(screenInfo* s, void* col, screenColTypes typ, screenColUses use) {
         perror("Too many columns!");
         exit(EXIT_FAILURE);
     }
-    s->cols[s->length++].typ = typ;
-    s->cols[s->length-1].use = use;
-    s->cols[s->length-1].data = col;
-    s->cols[s->length-1].header = "";
-    s->cols[s->length-1].cursorX = 0;
-    s->cols[s->length-1].cursorY = 0;
-    s->cols[s->length-1].lastOffset = 0;
+    screenCol* ncol = &s->cols[s->length++];
+    ncol->typ = typ;
+    ncol->use = use;
+    ncol->data = col;
+    ncol->header = malloc(1);
+    if (!ncol->header) { perror("malloc"); exit(EXIT_FAILURE); }
+    ncol->header[0] = '\0';
+    ncol->cursorX = 0;
+    ncol->cursorY = 0;
+    ncol->lastOffset = 0;
 }
 
 void scr_setCur(screenInfo* s, int newCol) {

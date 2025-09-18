@@ -31,6 +31,7 @@ struct SCDefStruct {
     int (*len)(screenCol* col);
     void (*offset)(screenCol* col, int maxRows);
     void (*mvSelect)(screenCol* col, int chngRows);
+    void (*mvHCurs)(screenCol* col, int dx);
     void (*free)(screenCol* col);
 };
 extern const struct SCDefStruct SC;
