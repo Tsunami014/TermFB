@@ -69,3 +69,8 @@ void onKeyPress(screenInfo* screen, screenCol* s, int cursorRow, char key) {
             break;
     }
 }
+
+void onArrowPress(screenInfo* screen, screenCol* s, char arrow) {
+    
+}
+

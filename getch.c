@@ -4,6 +4,7 @@
 
 #ifdef _WIN32
     #include <conio.h>
+    #include <windows.h>
 
     static void reset_terminal(void) {}
     void init_terminal(void) {
@@ -82,6 +83,9 @@ keyReturn* getKey() {
             default:
                 goto returnNothing;
         }
+        if (GetKeyState(VK_SHIFT) & 0x8000) {
+            escKey = toupper(escKey);
+        }
         keyReturn* kr = malloc(sizeof(keyReturn));
         if (!kr) { perror("malloc"); exit(EXIT_FAILURE); }
         kr->typ = ARROW_KEY;
@@ -108,6 +112,30 @@ keyReturn* getKey() {
                 // Escape sequence!
                 char escKey = '\0';
                 switch (chr) {
+                    case '1':
+                        if (moreInp()&&getch()==';'&&moreInp()) {
+                            if (getch()=='2'&&moreInp()) { // 2 = shift modifyer
+                                switch (getch()) {
+                                    case 'A':
+                                        escKey = 'U';
+                                        break;
+                                    case 'B':
+                                        escKey = 'D';
+                                        break;
+                                    case 'C':
+                                        escKey = 'R';
+                                        break;
+                                    case 'D':
+                                        escKey = 'L';
+                                        break;
+                                }
+                            }
+                        }
+                        if (escKey == '\0') {
+                            while (moreInp()) getch();
+                            goto returnNothing;
+                        }
+                        break;
                     case 'A':  // Up arrow
                         escKey = 'u';
                         break;

@@ -10,6 +10,7 @@ void init_actions(char* startingPath);
 typedef struct screenCol screenCol;  // Forward declaration
 typedef struct screenInfo screenInfo;  // Forward declaration
 void onKeyPress(screenInfo* screen, screenCol* s, int cursorRow, char key);
+void onArrowPress(screenInfo* screen, screenCol* s, char arrow);
 
 #endif
 

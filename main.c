@@ -27,12 +27,14 @@ int main(void) {
                     case 'd':  // Down arrow
                         scr.updCur(screen, 0, 1);
                         break;
-                    case 'r':  // Right arrow
+                    case 'R':  // Right arrow
                         scr.updCur(screen, 1, 0);
                         break;
-                    case 'l':  // Left arrow
+                    case 'L':  // Left arrow
                         scr.updCur(screen, -1, 0);
                         break;
+                    default:
+                        onArrowPress(screen, &screen->cols[screen->cursorCol], chr->key);
                 }
                 break;
             }
