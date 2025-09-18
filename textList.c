@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #ifndef _WIN32
     #include <strings.h>
 #endif
@@ -57,8 +58,20 @@ void tl_sort(textList* l, tlSortFunc sortFunc) {
     l->endIt = pointers[l->length - 1];
 }
 
+void toLowercase(char* inp) {
+    for (size_t i = 0; inp[i] != '\0'; i++) {
+        inp[i] = (char)tolower(inp[i]);
+    }
+}
 int match(char* a, char* b) {
-    return strstr(a, b) != NULL;
+    char* aCopy = strdup(a);
+    char* bCopy = strdup(b);
+    toLowercase(aCopy);
+    toLowercase(bCopy);
+    int res = strstr(aCopy, bCopy) != NULL;
+    free(aCopy);
+    free(bCopy);
+    return res;
 }
 
 textList* tl_filter(textList* l, char* filter) {
@@ -101,7 +114,6 @@ int sortAlphCIAsc(textItem** a, textItem** b) {
 #ifdef _WIN32
     return _stricmp((*a)->text, (*b)->text);
 #else
-    #include <strings.h>
     return strcasecmp((*a)->text, (*b)->text);
 #endif
 }
