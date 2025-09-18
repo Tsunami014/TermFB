@@ -21,17 +21,11 @@ int main(void) {
         switch (chr->typ) {
             case ARROW_KEY: {
                 switch (chr->key) {
-                    case 'u':  // Up arrow
-                        scr.updCur(screen, 0, -1);
-                        break;
-                    case 'd':  // Down arrow
-                        scr.updCur(screen, 0, 1);
-                        break;
                     case 'R':  // Right arrow
-                        scr.updCur(screen, 1, 0);
+                        scr.updCur(screen, 1);
                         break;
                     case 'L':  // Left arrow
-                        scr.updCur(screen, -1, 0);
+                        scr.updCur(screen, -1);
                         break;
                     default:
                         onArrowPress(screen, &screen->cols[screen->cursorCol], chr->key);
@@ -41,7 +35,7 @@ int main(void) {
             case ESCAPE_KEY:
                 break;
             case REGULAR_KEY:
-                onKeyPress(screen, &screen->cols[screen->cursorCol], screen->cursorRow, chr->key);
+                onKeyPress(screen, &screen->cols[screen->cursorCol], chr->key);
             case NOTHING:
                 break;
         }

@@ -7,6 +7,8 @@
 
 #include "render.h"
 
+const static char* bottomTxt = "Press ? for help";
+
 char* cutoff(char* text, int maxlength) {
     if (strlen(text) <= maxlength) {
         return strdup(text);
@@ -24,7 +26,7 @@ void printScrn(screenInfo* screen) {
     fflush(stdout);
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    if (w.ws_col <= 2*(screen->length)+1) {
+    if (w.ws_col <= 2*(screen->length)+1 || w.ws_col < strlen(bottomTxt)) {
         perror("Terminal too thin!");
         exit(EXIT_FAILURE);
     }
@@ -48,10 +50,12 @@ void printScrn(screenInfo* screen) {
     mtRow[ln1-1] = '\0';
 
     int SelectedOffset;
+    int cursorX;
     for (int i = 0; i < screen->length; i++) {
         if (screen->cursorCol == i) {
-            SC.offset(&screen->cols[i], screen->cursorRow, w.ws_row-2);
+            SC.offset(&screen->cols[i], w.ws_row-2);
             SelectedOffset = *(&screen->cols[i].lastOffset);
+            cursorX = screen->cols[i].cursorX;
         }
         SC.init(&screen->cols[i]);
     }
@@ -83,8 +87,9 @@ void printScrn(screenInfo* screen) {
                 extraSpaces[xtralen] = '\0';
 
                 wchar_t fmt[20];  // Enough for the maximum length the string can be (arbitrary number, should always work)
-                if (screen->cursorRow-SelectedOffset == row && screen->cursorCol == part) {
-                    wcscpy(fmt, L"│\033[1m%s%s\033[0m");  // Add bold to the selected value
+                if (screen->cursorCol == part && \
+                    screen->cols[part].cursorY-SelectedOffset == row) {
+                    wcscpy(fmt, L"│\033[1;7m%s%s\033[0m");  // Add inverse & bold to the selected value
                 } else {
                     wcscpy(fmt, L"│%s%s");
                 }
@@ -98,10 +103,14 @@ void printScrn(screenInfo* screen) {
     for (int i = 1; i < screen->length; i++) {
         midLine[sectIdx*i-1] = L'┴';
     }
+
+    int btlen = strlen(bottomTxt);
+    for (int i = 0; i < btlen; i++) {
+        midLine[ln-2-i] = bottomTxt[btlen-i-1];
+    }
     wprintf(L"╰%ls╯", midLine);
 
-    int cursX = 2 + sectIdx*screen->cursorCol;
-    int cursY = 2 + screen->cursorRow - SelectedOffset;
-    wprintf(L"\033[%d;%dH", cursY, cursX);  // Set cursor position
+    int cursX = 2 + sectIdx*screen->cursorCol + cursorX;
+    wprintf(L"\033[1;%dH", cursX);  // Set cursor position
     fflush(stdout);
 }

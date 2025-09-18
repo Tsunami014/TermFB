@@ -17,11 +17,11 @@ void init_actions(char* startingPath) {
 }
 
 
-void onDirectoryKeyPress(screenInfo* screen, screenCol* s, int cursorRow, char key) {
+void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
     switch (key) {
         case '\n': {
             textItem* it = ((textList*)s->data)->startIt;
-            for (int i = 0; i < cursorRow; i++) {
+            for (int i = 0; i < s->cursorY; i++) {
                 it = it->next;
             }
             char* fname = it->text;
@@ -54,7 +54,7 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, int cursorRow, char k
                 tl.free(s->data);
                 s->data = list_dir(DVI.path);
                 tl.sort(s->data, tlSort.alphaCIAsc);
-                scr.setCur(screen, screen->cursorCol, 0);
+                SC.mvSelect(s, 0);
             }
             break;
         }
@@ -62,15 +62,25 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, int cursorRow, char k
 }
 
 
-void onKeyPress(screenInfo* screen, screenCol* s, int cursorRow, char key) {
+void onKeyPress(screenInfo* screen, screenCol* s, char key) {
     switch (s->use) {
         case DIRECTORY_VIEW:
-            onDirectoryKeyPress(screen, s, cursorRow, key);
+            onDirectoryKeyPress(screen, s, key);
             break;
     }
 }
 
 void onArrowPress(screenInfo* screen, screenCol* s, char arrow) {
-    
+    switch (s->use) {
+        case DIRECTORY_VIEW:
+            switch (arrow) {
+                case 'u':  // Up arrow
+                    SC.mvSelect(s, -1);
+                    return;
+                case 'd':  // Down arrow
+                    SC.mvSelect(s, 1);
+                    return;
+            }
+    }
 }
 

@@ -38,9 +38,9 @@ int SC_len(screenCol* col) {
     }
 }
 
-void SC_offset(screenCol* col, int cursorRow, int maxRows) {
+void SC_offset(screenCol* col, int maxRows) {
     int hMaxRs = maxRows / 2;
-    int offset = cursorRow - hMaxRs;
+    int offset = col->cursorY - hMaxRs;
     if (offset <= 0) {
         offset = 0;
     } else {
@@ -53,6 +53,19 @@ void SC_offset(screenCol* col, int cursorRow, int maxRows) {
         }
     }
     col->lastOffset = offset;
+}
+
+void SC_move_selection(screenCol* col, int chngRows) {
+    int new = col->cursorY + chngRows;
+    if (new <= 0) {
+        new = 0;
+    } else {
+        int max = SC_len(col)-1;
+        if (new > max) {
+            new = max;
+        }
+    }
+    col->cursorY = new;
 }
 
 void SC_free(screenCol* col) {
@@ -69,6 +82,7 @@ const struct SCDefStruct SC = {
     .step = SC_step,
     .len = SC_len,
     .offset = SC_offset,
+    .mvSelect = SC_move_selection,
     .free = SC_free
 };
 
@@ -78,7 +92,6 @@ screenInfo* scr_init(void) {
     screenInfo* s = malloc(sizeof(screenInfo));
     s->length = 0;
     s->cursorCol = 0;
-    s->cursorRow = 0;
     s->cols = malloc(MAX_SCREEN_COLS * sizeof(screenCol));
     if (!s->cols) { perror("malloc"); exit(EXIT_FAILURE); }
     return s;
@@ -92,10 +105,13 @@ void scr_add(screenInfo* s, void* col, screenColTypes typ, screenColUses use) {
     s->cols[s->length++].typ = typ;
     s->cols[s->length-1].use = use;
     s->cols[s->length-1].data = col;
+    s->cols[s->length-1].header = "";
+    s->cols[s->length-1].cursorX = 0;
+    s->cols[s->length-1].cursorY = 0;
     s->cols[s->length-1].lastOffset = 0;
 }
 
-void scr_setCur(screenInfo* s, int newCol, int newRow) {
+void scr_setCur(screenInfo* s, int newCol) {
     if (newCol <= 0) {
         s->cursorCol = 0;
     } else {
@@ -105,21 +121,9 @@ void scr_setCur(screenInfo* s, int newCol, int newRow) {
             s->cursorCol = newCol;
         }
     }
-    if (newRow <= 0) {
-        s->cursorRow = 0;
-    } else {
-        int columnLen = SC_len(&s->cols[s->cursorCol]);
-        if (columnLen <= 0) {
-            s->cursorRow = 0;
-        } else if (newRow >= columnLen) {
-            s->cursorRow = columnLen-1;
-        } else {
-            s->cursorRow = newRow;
-        }
-    }
 }
-void scr_updCur(screenInfo* s, int dc, int dr) {
-    scr_setCur(s, s->cursorCol + dc, s->cursorRow + dr);
+void scr_updCur(screenInfo* s, int dc) {
+    scr_setCur(s, s->cursorCol + dc);
 }
 
 void scr_free(screenInfo* s) {

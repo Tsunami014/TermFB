@@ -11,9 +11,16 @@ typedef enum {
 } screenColTypes;
 
 struct screenCol {
+    // Behaviours
     screenColTypes typ;
     screenColUses use;
+    // The actual column render object
     void* data;
+    // Header data
+    char* header;
+    int cursorX;
+    // Render stuff
+    int cursorY;
     int lastOffset;
     void* renderData;  // This is only updated, and therefore used, when rendering
 };
@@ -22,14 +29,14 @@ struct SCDefStruct {
     void (*init)(screenCol* col);
     char* (*step)(screenCol* col);
     int (*len)(screenCol* col);
-    void (*offset)(screenCol* col, int cursorRow, int maxRows);
+    void (*offset)(screenCol* col, int maxRows);
+    void (*mvSelect)(screenCol* col, int chngRows);
     void (*free)(screenCol* col);
 };
 extern const struct SCDefStruct SC;
 
 struct screenInfo{
     int cursorCol;
-    int cursorRow;
     int length;
     screenCol* cols;
 };
@@ -37,8 +44,8 @@ struct screenInfo{
 struct scrDefStruct {
     screenInfo* (*init)(void);
     void (*add)(screenInfo* s, void* col, screenColTypes typ, screenColUses use);
-    void (*setCur)(screenInfo* s, int newCol, int newRow);
-    void (*updCur)(screenInfo* s, int columnDiff, int rowDiff);
+    void (*setCur)(screenInfo* s, int newCol);
+    void (*updCur)(screenInfo* s, int columnDiff);
     void (*shuffle)(screenInfo* s, int* newOrder);
     void (*free)(screenInfo* s);
 };
