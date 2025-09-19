@@ -4,9 +4,13 @@
 #include <wchar.h>
 #ifdef _WIN32
     #include <windows.h>
+    #define A "%hs"
+    #define A2 "hs"
 #else
     #include <sys/ioctl.h>
     #include <unistd.h>
+    #define A "%s"
+    #define A2 "s"
 #endif
 
 #include "render.h"
@@ -98,7 +102,7 @@ void printScrn(screenInfo* screen) {
                     char extraSpaces[spare+1];
                     for (int i = 0; i < spare; i++) extraSpaces[i] = ' ';
                     extraSpaces[spare] = '\0';
-                    wprintf(L"%ls%hs│\n", mtRow, extraSpaces);
+                    wprintf(L"%ls" A L"│\n", mtRow, extraSpaces);
                 } else {
                     wprintf(L"%ls ", mtRow);
                 }
@@ -119,9 +123,9 @@ void printScrn(screenInfo* screen) {
                 wchar_t fmt[20];  // Enough for the maximum length the string can be (arbitrary number, should always work)
                 if (screen->cursorCol == part && \
                     screen->cols[part].cursorY-SelectedOffset == row) {
-                    wcscpy(fmt, L"│\033[1;7m%hs%hs\033[0m");  // Add inverse & bold to the selected value
+                    wcscpy(fmt, L"│\033[1;7m" A A "\033[0m");  // Add inverse & bold to the selected value
                 } else {
-                    wcscpy(fmt, L"│%hs%hs");
+                    wcscpy(fmt, L"│" A A);
                 }
                 wcscat(fmt, xtra);
                 wprintf(fmt, text, extraSpaces);
@@ -162,7 +166,7 @@ void init_help() {
         "  Type to filter directory (backspace/delete also works)\n"
         "  Left/right arrow keys to move cursor to aid in inputting in filter\n"
 
-        "\nYour config file is located in: %s\n"
+        "\nYour config file is located in: " A "\n"
         "Press space to exit\n";
     size_t bufsize = strlen(template) + strlen(confPath) + 1;
     helpTxt = malloc(bufsize);
@@ -216,11 +220,11 @@ int printHelp(int idx) {
         char spacing[xtraSpace+1];
         for (int i = 0; i < xtraSpace; i++) spacing[i] = ' ';
         spacing[xtraSpace] = '\0';
-        wprintf(L"│%.*hs%hs│\n", nIdx-idx, helpTxt+idx, spacing);
+        wprintf(L"│%.*" A2 A L"│\n", nIdx-idx, helpTxt+idx, spacing);
         idx = nIdx+xtra;
     }
     for (int i = 0; i < linesLeft; i++) {
-        wprintf(L"│%hs│\n", mtline);
+        wprintf(L"│" A L"│\n", mtline);
     }
     wprintf(L"╰%ls╯", horizline);
     fflush(stdout);

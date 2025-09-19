@@ -15,9 +15,9 @@
 #include "config.h"
 
 int main(void) {
+    init_terminal();
     wprintf(L"\033[2J\033[H");
     fflush(stdout);
-    init_terminal();
 
     char* startingPath = expand_tilde("~/");
     screenInfo* screen = scr.init();
