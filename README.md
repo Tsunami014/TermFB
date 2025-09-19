@@ -6,6 +6,8 @@ This is my first completed project in C, please don't judge too harshly.
 If you find any bugs it's probably your fault (e.g. accessing forbidden folders, mashing the keyboard unecessarily). And if it's running slowly then it's because you're on Windows because on my Linux partition it worked magnificently.
 
 ## Features
+- **WORKS ON WINDOWS AND LINUX**
+- No external dependencies to install (a main reason for how long it took)
 - Neat terminal interface
     - Adjusts for terminal size (each time an input is pressed, that is)
     - Can have any amount of columns (but currently only 2 are used)

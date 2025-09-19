@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
 #ifdef _WIN32
     #include <windows.h>
 #else
