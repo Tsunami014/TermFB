@@ -5,6 +5,7 @@
 
 void printScrn(screenInfo* screen);
 
+void init_help();
 int printHelp(int idx);
 
 #endif

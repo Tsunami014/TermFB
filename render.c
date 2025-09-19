@@ -6,6 +6,7 @@
 #include <wchar.h>
 
 #include "render.h"
+#include "config.h"
 
 const static char* bottomTxt = "Press ? for help";
 
@@ -122,20 +123,31 @@ void printScrn(screenInfo* screen) {
     fflush(stdout);
 }
 
-const char helpTxt[] =
-    "HELP\n"
-    "  (Press space to scroll this page if required)\n"
-    "General keys:\n"
-    "  Shift+(left/right) to switch column\n"
-    "  ? shows this help screen"
-    "File directory keys:\n"
-    "  Up/down arrows (or tab/shift-tab keys) change selected folder (../ is go up a directory)\n"
-    "  Enter goes into selected directory\n"
-    "  Type to filter directory (backspace/delete also works)\n"
-    "  Left/right arrow keys to move cursor to aid in inputting in filter\n"
+static char* helpTxt;
+static int helpTxtLen;
 
-    "Press space to exit\n";
-const int helpTxtLen = strlen(helpTxt);
+void init_help() {
+    const char* template =
+        "HELP\n"
+        "  (Press space to scroll this page if required)\n"
+        "General keys:\n"
+        "  Shift+(left/right) to switch column\n"
+        "  ? shows this help screen"
+        "File directory keys:\n"
+        "  Up/down arrows (or tab/shift-tab keys) change selected folder (../ is go up a directory)\n"
+        "  Enter goes into selected directory\n"
+        "  Type to filter directory (backspace/delete also works)\n"
+        "  Left/right arrow keys to move cursor to aid in inputting in filter\n"
+
+        "\nYour config file is located in: %s\n"
+        "Press space to exit\n";
+    size_t bufsize = strlen(template) + strlen(confPath) + 1;
+    helpTxt = malloc(bufsize);
+    if (!helpTxt) { perror("malloc"); exit(EXIT_FAILURE); }
+    snprintf(helpTxt, bufsize, template, confPath);
+
+    helpTxtLen = strlen(helpTxt);
+}
 
 int printHelp(int idx) {
     wprintf(L"\033[2J\033[H");

@@ -4,7 +4,8 @@
 #include "textList.h"
 
 typedef enum {
-    DIRECTORY_VIEW
+    DIRECTORY_VIEW,
+    DIRECTORY_SELECT,
 } screenColUses;
 
 textList* init_actions(char* startingPath);

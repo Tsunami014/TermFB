@@ -5,14 +5,18 @@
 #include "listdir.h"
 #include "actions.h"
 #include "render.h"
+#include "config.h"
 
 int main(void) {
     init_terminal();
 
     char* startingPath = expand_tilde("~/");
     screenInfo* screen = scr.init();
+    scr.add(screen, init_config(), WORDLIST, DIRECTORY_SELECT);
     textList* dir = init_actions(startingPath);
     scr.add(screen, dir, WORDLIST, DIRECTORY_VIEW);
+    screen->cursorCol = 1;
+    init_help();  // Must come after init_comig
     while (1) {
         printScrn(screen);
         keyReturn* chr = getKey();
