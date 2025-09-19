@@ -33,7 +33,16 @@ int main(void) {
             case ESCAPE_KEY:
                 break;
             case REGULAR_KEY:
-                onKeyPress(screen, &screen->cols[screen->cursorCol], chr->key);
+                if (chr->key == '?') {
+                    int i = 0;
+                    while (i != -1) {
+                        i = printHelp(i);
+                        while (getch() != ' ') {}  // Must wait for space
+                    }
+
+                } else {
+                    onKeyPress(screen, &screen->cols[screen->cursorCol], chr->key);
+                }
             case NOTHING:
                 break;
         }

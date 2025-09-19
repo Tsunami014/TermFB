@@ -5,4 +5,6 @@
 
 void printScrn(screenInfo* screen);
 
+int printHelp(int idx);
+
 #endif
