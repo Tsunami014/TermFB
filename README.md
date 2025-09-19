@@ -1,6 +1,8 @@
 # A Terminal File Browser
 This is my first completed project in C, please don't judge too harshly.
 
+If you find any bugs it's probably your fault (e.g. accessing forbidden folders, mashing the keyboard unecessarily)
+
 ## Features
 - Neat terminal interface with nice navigation between folders
 - Display all files and folders in the current directory
