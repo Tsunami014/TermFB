@@ -12,8 +12,11 @@ int main(void) {
 
     char* startingPath = expand_tilde("~/");
     screenInfo* screen = scr.init();
+
     scr.add(screen, init_config(), WORDLIST, DIRECTORY_SELECT);
-    textList* dir = init_actions(startingPath);
+    textList* dir = list_dir(startingPath);
+    tl.sort(dir, tlSort.alphaCIAsc);
+    dl.setup(dir, startingPath);
     scr.add(screen, dir, WORDLIST, DIRECTORY_VIEW);
     screen->cursorCol = 1;
     init_help();  // Must come after init_comig

@@ -60,6 +60,7 @@ textList* list_dir(char *path) {
     closedir(d);
 #endif
 
+    dl.setup(dir, path);
     return dir;
 }
 

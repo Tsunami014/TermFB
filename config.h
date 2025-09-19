@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include "textList.h"
+#include "dirList.h"
 
 extern char* confPath;
 

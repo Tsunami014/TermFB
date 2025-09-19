@@ -11,6 +11,7 @@ typedef struct {
     textItem* startIt;
     textItem* endIt;
     int length;
+    void* info;  // For other stuff to do with as they please, not kept track of (OR FREED) by this at all.
 } textList;
 
 typedef int (*tlSortFunc)(textItem** a, textItem** b);
@@ -20,7 +21,8 @@ struct tlDefStruct {
     void (*add)(textList* l, char* txt);
     char* (*get)(textList* l, int idx);
     void (*sort)(textList* l, tlSortFunc sortFunc);
-    textList* (*filter)(textList*l, char* filter);
+    textList* (*filter)(textList* l, char* filter);
+    textList* (*copy)(textList* l);
     void (*free)(textList* l);
 };
 extern const struct tlDefStruct tl;  // Functions for working with text lists; use tl.init(...), tl.add(list, ...), etc.

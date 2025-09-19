@@ -86,6 +86,7 @@ textList* init_config() {
     }
     fclose(file);
 
+    dl.setup(dirs, confPath);
     return dirs;
 }
 

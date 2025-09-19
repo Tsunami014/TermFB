@@ -1,30 +1,27 @@
-#include "actions.h"
-#include "renderStructs.h"
-#include "listdir.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-// NOTE: This is the file where I make assumptions that there is only one of each screenColUses on the screen at a time
+#include "actions.h"
+#include "renderStructs.h"
+#include "listdir.h"
 
-typedef struct {
-    char* path;
-    textList* curDir;
-} dirViewInfo;
-
-static dirViewInfo DVI;
-
-textList* init_actions(char* startingPath) {
-    DVI.path = strdup(startingPath);
-    textList* dir = list_dir(startingPath);
-    tl.sort(dir, tlSort.alphaCIAsc);
-    DVI.curDir = tl.filter(dir, "");  // Copy
-    return dir;
-}
 
 void filter_dirSC(screenCol* s) {
-    tl.free(s->data);
-    s->data = tl.filter(DVI.curDir, s->header);
+    textList* dat = s->data;
+    textList* newL = tl.filter(((dirViewInfo*)dat->info)->curDir, s->header);  // Get a filtered copy of the original
+    // Delete the old filtered version
+    textItem* it = dat->startIt;
+    while (it != NULL) {
+        textItem* next = it->next;
+        free(it);
+        it = next;
+    }
+    // Insert the new filtered copy in place
+    dat->startIt = newL->startIt;
+    dat->endIt = newL->endIt;
+    dat->length = newL->length;
+    free(newL);  // Remove the space taken up by the temporary copy; but the items are still here, now passed on to the original dat
     SC.mvSelect(s, 0);
 }
 
@@ -35,51 +32,6 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
     }
     if (key == '\x1F') {  // My custom 'shift-tab' key
         onArrowPress(screen, s, 'u');
-        return;
-    }
-    if (key == '\n') {
-        textItem* it = ((textList*)s->data)->startIt;
-        for (int i = 0; i < s->cursorY; i++) {
-            it = it->next;
-        }
-        char* fname = it->text;
-        if (fname[strlen(fname)-1] == '/') {
-            if (strcmp(fname, "./") == 0) {
-                return;
-            } else if (strcmp(fname, "../") == 0) {
-                DVI.path[strlen(DVI.path)-1] = '\0';  // Destroy the last /
-                const char *last = strrchr(DVI.path, '/');
-                size_t index;
-                if (last) {
-                    index = (size_t)(last - DVI.path);
-                } else {
-                    index = 0;
-                }
-
-                char* npath = malloc(index+2);
-                strncpy(npath, DVI.path, index);
-                npath[index] = '/';
-                npath[index+1] = '\0';
-                free(DVI.path);
-                DVI.path = npath;
-            } else {
-                char* npath = malloc(strlen(DVI.path)+strlen(fname)+1);
-                strcpy(npath, DVI.path);
-                strcat(npath, fname);
-                free(DVI.path);
-                DVI.path = npath;
-            }
-            tl.free(s->data);
-            tl.free(DVI.curDir);
-            s->data = list_dir(DVI.path);
-            tl.sort(s->data, tlSort.alphaCIAsc);
-            DVI.curDir = tl.filter(s->data, "");  // Copy
-            s->cursorY = 0;
-            s->cursorX = 0;
-            s->header = realloc(s->header, 1);  // Clear header
-            if (!s->header) { perror("realloc"); exit(EXIT_FAILURE); }
-            s->header[0] = '\0';
-        }
         return;
     }
     if (key == '\x7F') {  // Backspace
@@ -110,17 +62,90 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
 }
 
 
+void blankHeader(screenCol* s) {
+    s->cursorY = 0;
+    s->cursorX = 0;
+    s->header = realloc(s->header, 1);  // Clear header
+    if (!s->header) { perror("realloc"); exit(EXIT_FAILURE); }
+    s->header[0] = '\0';
+}
+
 void onKeyPress(screenInfo* screen, screenCol* s, char key) {
     switch (s->use) {
         case DIRECTORY_VIEW:
+            if (key == '\n') {
+                textList* txtL = s->data;
+                dirViewInfo* dvi = txtL->info;
+                textItem* it = txtL->startIt;
+                for (int i = 0; i < s->cursorY; i++) {
+                    it = it->next;
+                }
+                char* fname = it->text;
+                if (fname[strlen(fname)-1] == '/') {
+                    if (strcmp(fname, "./") == 0) {
+                        return;
+                    } else if (strcmp(fname, "../") == 0) {
+                        dvi->path[strlen(dvi->path)-1] = '\0';  // Destroy the last /
+                        const char *last = strrchr(dvi->path, '/');
+                        size_t index;
+                        if (last) {
+                            index = (size_t)(last - dvi->path);
+                        } else {
+                            index = 0;
+                        }
+
+                        char* npath = malloc(index+2);
+                        strncpy(npath, dvi->path, index);
+                        npath[index] = '/';
+                        npath[index+1] = '\0';
+                        free(dvi->path);
+                        dvi->path = npath;
+                    } else {
+                        char* npath = malloc(strlen(dvi->path)+strlen(fname)+1);
+                        strcpy(npath, dvi->path);
+                        strcat(npath, fname);
+                        free(dvi->path);
+                        dvi->path = npath;
+                    }
+                    char* npath = strdup(dvi->path);
+                    dl.free(s->data);
+                    s->data = list_dir(npath);
+                    tl.sort(s->data, tlSort.alphaCIAsc);
+                    dl.setup(s->data, npath);
+                    blankHeader(s);
+                }
+                return;
+            }
+            onDirectoryKeyPress(screen, s, key);
+            break;
+        case DIRECTORY_SELECT:
+            if (key == '\n') {
+                for (int i = 0; i < screen->length; i++) {  // This means there can only be one directory view
+                    if (screen->cols[i].use == DIRECTORY_VIEW) {
+                        screenCol* col = &screen->cols[i];
+                        blankHeader(col);  // Clear next column's header
+                        char* path = expand_tilde(tl.get(col->data, col->cursorY));
+                        textList* dir = list_dir(path);
+                        tl.sort(dir, tlSort.alphaCIAsc);
+                        dl.setup(dir, path);
+                        dl.free(col->data);
+                        col->data = dir;
+                        screen->cursorCol = i;  // Select the dir view
+                        blankHeader(s);  // Clear this column's filter
+                        filter_dirSC(s);  // Unfilter
+                        return;
+                    }
+                }
+                return;
+            }
             onDirectoryKeyPress(screen, s, key);
             break;
     }
 }
 
 void onArrowPress(screenInfo* screen, screenCol* s, char arrow) {
-    switch (s->use) {
-        case DIRECTORY_VIEW:
+    switch (s->typ) {
+        case WORDLIST:
             switch (arrow) {
                 case 'u':  // Up arrow
                     SC.mvSelect(s, -1);

@@ -86,6 +86,16 @@ textList* tl_filter(textList* l, char* filter) {
     return ntl;
 }
 
+textList* tl_copy(textList* l) {
+    textList* ntl = tl_init();
+    textItem* it = l->startIt;
+    while (it != NULL) {
+        tl_add(ntl, it->text);
+        it = it->next;
+    }
+    return ntl;
+}
+
 void tl_free(textList* l) {
     if (!l) return;
     textItem* it = l->startIt;
@@ -103,6 +113,7 @@ const struct tlDefStruct tl = {
     .get  = tl_get,
     .sort = tl_sort,
     .filter = tl_filter,
+    .copy = tl_copy,
     .free = tl_free
 };
 
