@@ -1,14 +1,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
 #include <wchar.h>
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <sys/ioctl.h>
+    #include <unistd.h>
+#endif
 
 #include "render.h"
 #include "config.h"
 
 const static char* bottomTxt = "Press ? for help";
+
+#ifdef _WIN32
+struct winsize {
+    unsigned short ws_row;
+    unsigned short ws_col;
+};
+
+void get_terminal_size(struct winsize* w) {
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    w->ws_col = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+    w->ws_row = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+}
+#else
+void get_terminal_size(struct winsize* w) {
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, w);
+}
+#endif
 
 char* cutoff(char* text, int maxlength) {
     if (strlen(text) <= maxlength) {
@@ -23,10 +45,10 @@ char* cutoff(char* text, int maxlength) {
 }
 
 void printScrn(screenInfo* screen) {
-    wprintf(L"\033[2J\033[H");
+    wprintf(L"\033[H");
     fflush(stdout);
     struct winsize w;
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    get_terminal_size(&w);
     if (w.ws_col <= 2*(screen->length)+1 || w.ws_col < strlen(bottomTxt)) {
         perror("Terminal too thin!");
         exit(EXIT_FAILURE);
@@ -76,7 +98,7 @@ void printScrn(screenInfo* screen) {
                     char extraSpaces[spare+1];
                     for (int i = 0; i < spare; i++) extraSpaces[i] = ' ';
                     extraSpaces[spare] = '\0';
-                    wprintf(L"%ls%s│\n", mtRow, extraSpaces);
+                    wprintf(L"%ls%hs│\n", mtRow, extraSpaces);
                 } else {
                     wprintf(L"%ls ", mtRow);
                 }
@@ -97,9 +119,9 @@ void printScrn(screenInfo* screen) {
                 wchar_t fmt[20];  // Enough for the maximum length the string can be (arbitrary number, should always work)
                 if (screen->cursorCol == part && \
                     screen->cols[part].cursorY-SelectedOffset == row) {
-                    wcscpy(fmt, L"│\033[1;7m%s%s\033[0m");  // Add inverse & bold to the selected value
+                    wcscpy(fmt, L"│\033[1;7m%hs%hs\033[0m");  // Add inverse & bold to the selected value
                 } else {
-                    wcscpy(fmt, L"│%s%s");
+                    wcscpy(fmt, L"│%hs%hs");
                 }
                 wcscat(fmt, xtra);
                 wprintf(fmt, text, extraSpaces);
@@ -132,7 +154,8 @@ void init_help() {
         "  (Press space to scroll this page if required)\n"
         "General keys:\n"
         "  Shift+(left/right) to switch column\n"
-        "  ? shows this help screen"
+        "  ? shows this help screen\n"
+        "  Esc exits the program\n"
         "File directory keys:\n"
         "  Up/down arrows (or tab/shift-tab keys) change selected folder (../ is go up a directory)\n"
         "  Enter goes into selected directory\n"
@@ -153,7 +176,7 @@ int printHelp(int idx) {
     wprintf(L"\033[2J\033[H");
     fflush(stdout);
     struct winsize w;
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    get_terminal_size(&w);
     if (w.ws_col <= 2) {
         perror("Terminal too thin!");
         exit(EXIT_FAILURE);
@@ -193,11 +216,11 @@ int printHelp(int idx) {
         char spacing[xtraSpace+1];
         for (int i = 0; i < xtraSpace; i++) spacing[i] = ' ';
         spacing[xtraSpace] = '\0';
-        wprintf(L"│%.*s%s│\n", nIdx-idx, helpTxt+idx, spacing);
+        wprintf(L"│%.*hs%hs│\n", nIdx-idx, helpTxt+idx, spacing);
         idx = nIdx+xtra;
     }
     for (int i = 0; i < linesLeft; i++) {
-        wprintf(L"│%s│\n", mtline);
+        wprintf(L"│%hs│\n", mtline);
     }
     wprintf(L"╰%ls╯", horizline);
     fflush(stdout);

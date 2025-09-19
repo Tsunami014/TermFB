@@ -1,6 +1,13 @@
 CC=gcc
 CFLAGS=
-OUT=a.out
+
+ifeq ($(OS),Windows_NT)
+    OUT=termfb.exe
+    RM=del $(OUT)
+else
+    OUT=termfb
+    RM=rm -rf $(OUT)
+endif
 
 all: build
 
@@ -11,5 +18,5 @@ debug: CFLAGS+=-DDEBUG_ON
 debug: build
 
 clean:
-	rm -rf $(OUT)
+	$(RM)
 

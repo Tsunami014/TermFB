@@ -34,7 +34,7 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
         onArrowPress(screen, s, 'u');
         return;
     }
-    if (key == '\x7F') {  // Backspace
+    if (key == '\x7F' || key == '\b') {  // Backspace
         if (s->cursorX == 0) return;
         size_t len = strlen(s->header);
         memmove(s->header + s->cursorX - 1, s->header + s->cursorX, len - s->cursorX + 1);
@@ -73,7 +73,7 @@ void blankHeader(screenCol* s) {
 void onKeyPress(screenInfo* screen, screenCol* s, char key) {
     switch (s->use) {
         case DIRECTORY_VIEW:
-            if (key == '\n') {
+            if (key == '\n' || key == '\r') {
                 textList* txtL = s->data;
                 dirViewInfo* dvi = txtL->info;
                 textItem* it = txtL->startIt;
@@ -119,7 +119,7 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
             onDirectoryKeyPress(screen, s, key);
             break;
         case DIRECTORY_SELECT:
-            if (key == '\n') {
+            if (key == '\n' || key == '\r') {
                 for (int i = 0; i < screen->length; i++) {  // This means there can only be one directory view
                     if (screen->cols[i].use == DIRECTORY_VIEW) {
                         screenCol* col = &screen->cols[i];

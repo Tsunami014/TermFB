@@ -1,5 +1,10 @@
-#include <sys/ioctl.h>
-#include <unistd.h>
+#include <stdio.h>
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <sys/ioctl.h>
+    #include <unistd.h>
+#endif
 
 #include "getch.h"
 #include "listdir.h"
@@ -8,6 +13,8 @@
 #include "config.h"
 
 int main(void) {
+    wprintf(L"\033[2J\033[H");
+    fflush(stdout);
     init_terminal();
 
     char* startingPath = expand_tilde("~/");
@@ -38,13 +45,15 @@ int main(void) {
                 break;
             }
             case ESCAPE_KEY:
-                break;
+                wprintf(L"\033[2J\033[H");
+                fflush(stdout);
+                exit(EXIT_SUCCESS);
             case REGULAR_KEY:
                 if (chr->key == '?') {
                     int i = 0;
                     while (i != -1) {
                         i = printHelp(i);
-                        while (getch() != ' ') {}  // Must wait for space
+                        while (getThatCh() != ' ') {}  // Must wait for space
                     }
                 } else {
                     onKeyPress(screen, &screen->cols[screen->cursorCol], chr->key);

@@ -1,20 +1,35 @@
 #include <locale.h>
 #include <stdio.h>
+#include <stdlib.h>
+
 #include "getch.h"
 
 #ifdef _WIN32
     #include <conio.h>
     #include <windows.h>
+    #include <ctype.h>
+    #include <io.h>
+    #include <fcntl.h>
 
     static void reset_terminal(void) {}
     void init_terminal(void) {
         setlocale(LC_ALL, "");
+        // Enable ANSI escape sequences
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (hOut != INVALID_HANDLE_VALUE) {
+            DWORD mode = 0;
+            if (GetConsoleMode(hOut, &mode)) {
+                mode |= 0x0004;
+                SetConsoleMode(hOut, mode);
+            }
+        }
+        // Make stdout wide (UTF-16) so wprintf prints box-drawing correctly
+        _setmode(_fileno(stdout), 0x20000);
     }
 #else
     #include <unistd.h>
     #include <termios.h>
     #include <sys/select.h>
-    #include <stdlib.h>  // for atexit
 
     static struct termios orig_termios;
 
@@ -36,7 +51,7 @@
 #endif
 
 // Read one character (non-blocking on Windows / raw mode on Unix)
-char getch(void) {
+char getThatCh(void) {
 #ifdef _WIN32
     return _getch();
 #else
@@ -67,7 +82,7 @@ keyReturn* getKey() {
     if (chr == 0 || chr == 0xE0) {  // special key prefix
         int code = _getch();
         char escKey = '\0';
-        switch (_getch()) {
+        switch (code) {
             case 0x48:
                 escKey = 'u';
                 break;
@@ -80,7 +95,7 @@ keyReturn* getKey() {
             case 0x4B:
                 escKey = 'l';
                 break;
-            case 0X53:  //  Delete key
+            case 0x53:  // Delete key
                 chr = '\x1E';
                 goto regularKey;
             default:
@@ -102,25 +117,25 @@ keyReturn* getKey() {
         goto regularKey;  // Now that we're here, just skip
     }
 #else
-    char chr = getch();
+    char chr = getThatCh();
 #endif
     if (chr == '\033') {
         if (moreInp()) {
-            chr = getch();
+            chr = getThatCh();
             if (chr == '[') {
                 if (!moreInp()) {
                     // Dunno why this would ever occur, but if there's only half an escape code just ignore the rest of the keys and return nothing
-                    while (moreInp()) getch();
+                    while (moreInp()) getThatCh();
                     goto returnNothing;
                 }
-                chr = getch();
+                chr = getThatCh();
                 // Escape sequence!
                 char escKey = '\0';
                 switch (chr) {
                     case '1':
-                        if (moreInp()&&getch()==';'&&moreInp()) {
-                            if (getch()=='2'&&moreInp()) { // 2 = shift modifyer
-                                switch (getch()) {
+                        if (moreInp()&&getThatCh()==';'&&moreInp()) {
+                            if (getThatCh()=='2'&&moreInp()) { // 2 = shift modifyer
+                                switch (getThatCh()) {
                                     case 'A':
                                         escKey = 'U';
                                         break;
@@ -137,12 +152,12 @@ keyReturn* getKey() {
                             }
                         }
                         if (escKey == '\0') {
-                            while (moreInp()) getch();
+                            while (moreInp()) getThatCh();
                             goto returnNothing;
                         }
                         break;
                     case '3':
-                        if (moreInp()&&getch()=='~') {
+                        if (moreInp()&&getThatCh()=='~') {
                             chr = '\x1E';  // Custom delete key
                             goto regularKey;
                         }
@@ -163,7 +178,7 @@ keyReturn* getKey() {
                         chr = '\x1F';
                         goto regularKey;
                     default:  // Unknown escape key; just absorb the rest of the keys and return nothing
-                        while (moreInp()) getch();
+                        while (moreInp()) getThatCh();
                         goto returnNothing;
                 }
                 keyReturn* kr = malloc(sizeof(keyReturn));
@@ -173,7 +188,7 @@ keyReturn* getKey() {
                 return kr;
             } else if (chr == '\033') {
                 // Escape key was pressed, but also an escape sequence is starting so just ignore the rest and return escape
-                while (moreInp()) getch();
+                while (moreInp()) getThatCh();
                 goto returnEscape;
             } else {
                 // Escape key was pressed, but another key was pressed straight after. So just ignore the next key.
@@ -184,19 +199,19 @@ keyReturn* getKey() {
             goto returnEscape;
         }
     } else {
-regularKey:
+regularKey:;
         keyReturn* kr = malloc(sizeof(keyReturn));
         if (!kr) { perror("malloc"); exit(EXIT_FAILURE); }
         kr->typ = REGULAR_KEY;
         kr->key = chr;
         return kr;
     }
-returnNothing:
+returnNothing:;
     keyReturn* nothingkr = malloc(sizeof(keyReturn));
     if (!nothingkr) { perror("malloc"); exit(EXIT_FAILURE); }
     nothingkr->typ = NOTHING;
     return nothingkr;
-returnEscape:
+returnEscape:;
     keyReturn* esckr = malloc(sizeof(keyReturn));
     if (!esckr) { perror("malloc"); exit(EXIT_FAILURE); }
     esckr->typ = ESCAPE_KEY;

@@ -4,7 +4,7 @@
 static void reset_terminal(void);
 void init_terminal(void);
 
-char getch(void);
+char getThatCh(void);
 int moreInp();
 
 

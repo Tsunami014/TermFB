@@ -34,7 +34,7 @@ void get_config_path() {
     const char *base = getenv("APPDATA");
     if (!base) base = "C:\\";
     snprintf(path, pathSze, "%s\\%s", base, appName);
-    create_dir_if_not_exists(buffer);
+    create_dir_if_not_exists(path);
     strncat(path, "\\config", pathSze - strlen(path) - 1);
 #else
     const char *base = getenv("XDG_CONFIG_HOME");
