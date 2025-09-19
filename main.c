@@ -39,7 +39,6 @@ int main(void) {
                         i = printHelp(i);
                         while (getch() != ' ') {}  // Must wait for space
                     }
-
                 } else {
                     onKeyPress(screen, &screen->cols[screen->cursorCol], chr->key);
                 }

@@ -1,5 +1,5 @@
 #include "actions.h"
-#include "renderStructs.h"  // TRUST GUYS THIS ONE IS USED
+#include "renderStructs.h"
 #include "listdir.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,6 +29,14 @@ void filter_dirSC(screenCol* s) {
 }
 
 void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
+    if (key == '\t') {
+        onArrowPress(screen, s, 'd');
+        return;
+    }
+    if (key == '\x1F') {  // My custom 'shift-tab' key
+        onArrowPress(screen, s, 'u');
+        return;
+    }
     if (key == '\n') {
         textItem* it = ((textList*)s->data)->startIt;
         for (int i = 0; i < s->cursorY; i++) {
@@ -74,7 +82,7 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
         }
         return;
     }
-    if (key == '\x7F') {
+    if (key == '\x7F') {  // Backspace
         if (s->cursorX == 0) return;
         size_t len = strlen(s->header);
         memmove(s->header + s->cursorX - 1, s->header + s->cursorX, len - s->cursorX + 1);
@@ -84,7 +92,7 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
         filter_dirSC(s);
         return;
     }
-    if (key == '\x2E') {
+    if (key == '\x1E') {  // My delete character
         size_t len = strlen(s->header);
         if (s->cursorX >= len) return;
         memmove(s->header + s->cursorX, s->header + s->cursorX + 1, len - s->cursorX);
@@ -93,14 +101,12 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
         filter_dirSC(s);
         return;
     }
-    if (key != '/') {
-        size_t nlen = strlen(s->header)+1;
-        s->header = realloc(s->header, nlen+1);
-        if (!s->header) { perror("realloc"); exit(EXIT_FAILURE); }
-        memmove(s->header + s->cursorX + 1, s->header + s->cursorX, nlen - s->cursorX + 1);
-        s->header[s->cursorX++] = key;
-        filter_dirSC(s);
-    }
+    size_t nlen = strlen(s->header)+1;
+    s->header = realloc(s->header, nlen+1);
+    if (!s->header) { perror("realloc"); exit(EXIT_FAILURE); }
+    memmove(s->header + s->cursorX + 1, s->header + s->cursorX, nlen - s->cursorX + 1);
+    s->header[s->cursorX++] = key;
+    filter_dirSC(s);
 }
 
 

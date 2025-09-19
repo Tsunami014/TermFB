@@ -129,10 +129,10 @@ const char helpTxt[] =
     "  Shift+(left/right) to switch column\n"
     "  ? shows this help screen"
     "File directory keys:\n"
-    "  Up/down arrow keys change selected folder (../ is go up a directory)\n"
+    "  Up/down arrows (or tab/shift-tab keys) change selected folder (../ is go up a directory)\n"
     "  Enter goes into selected directory\n"
     "  Type to filter directory (backspace/delete also works)\n"
-    "  Left/right arrow keys to move cursor to aid in inputting filter\n"
+    "  Left/right arrow keys to move cursor to aid in inputting in filter\n"
 
     "Press space to exit\n";
 const int helpTxtLen = strlen(helpTxt);

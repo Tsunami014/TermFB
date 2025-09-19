@@ -63,8 +63,8 @@ int moreInp(void) {
 
 keyReturn* getKey() {
 #ifdef _WIN32
-    int ch = _getch();
-    if (ch == 0 || ch == 0xE0) {  // special key prefix
+    int chr = _getch();
+    if (chr == 0 || chr == 0xE0) {  // special key prefix
         int code = _getch();
         char escKey = '\0';
         switch (_getch()) {
@@ -80,6 +80,9 @@ keyReturn* getKey() {
             case 0x4B:
                 escKey = 'l';
                 break;
+            case 0X53:  //  Delete key
+                chr = '\x1E';
+                goto regularKey;
             default:
                 goto returnNothing;
         }
@@ -92,13 +95,15 @@ keyReturn* getKey() {
         kr->key = escKey;
         return kr;
     }
-    keyReturn* kr = malloc(sizeof(keyReturn));
-    if (!kr) { perror("malloc"); exit(EXIT_FAILURE); }
-    kr->typ = REGULAR_KEY;
-    kr->key = ch;
-    return kr;
+    if (chr == '\t') {
+        if (GetKeyState(VK_SHIFT) & 0x8000) {
+            chr = '\x1F';  // My custom shift-tab key
+        }
+        goto regularKey;  // Now that we're here, just skip
+    }
 #else
     char chr = getch();
+#endif
     if (chr == '\033') {
         if (moreInp()) {
             chr = getch();
@@ -138,9 +143,10 @@ keyReturn* getKey() {
                         break;
                     case '3':
                         if (moreInp()&&getch()=='~') {
-                            chr = '\x2E';
+                            chr = '\x1E';  // Custom delete key
                             goto regularKey;
                         }
+                        goto returnNothing;  // Not supported
                     case 'A':  // Up arrow
                         escKey = 'u';
                         break;
@@ -153,6 +159,9 @@ keyReturn* getKey() {
                     case 'D':  // Left arrow
                         escKey = 'l';
                         break;
+                    case 'Z':  // Shift tab
+                        chr = '\x1F';
+                        goto regularKey;
                     default:  // Unknown escape key; just absorb the rest of the keys and return nothing
                         while (moreInp()) getch();
                         goto returnNothing;
@@ -182,7 +191,6 @@ regularKey:
         kr->key = chr;
         return kr;
     }
-#endif
 returnNothing:
     keyReturn* nothingkr = malloc(sizeof(keyReturn));
     if (!nothingkr) { perror("malloc"); exit(EXIT_FAILURE); }
