@@ -4,8 +4,11 @@ This is my first completed project in C, please don't judge too harshly.
 If you find any bugs it's probably your fault (e.g. accessing forbidden folders, mashing the keyboard unecessarily). And if it's running slowly then it's because you're on Windows because on my Linux partition it worked magnificently.
 
 ## Features
-- Neat terminal interface with nice navigation between folders
+- Neat terminal interface
+    - Adjusts for terminal size (each time an input is pressed, that is)
+    - Can have any amount of columns (but currently only 2 are used)
 - Display all files and folders in the current directory
+- Can move between directories nicely
 - List of directories set in a config file to the side for quick access
 - Help screen!
 - Filter files and folders by typing!
