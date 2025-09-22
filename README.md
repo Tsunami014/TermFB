@@ -3,7 +3,7 @@ This is my first completed project in C, please don't judge too harshly.
 
 <img width="1352" height="349" alt="Screenshot 2025-09-19 113710" src="https://github.com/user-attachments/assets/13c8cfd8-4dfe-4c24-b853-65f905f320cd" />
 
-If you find any bugs it's probably your fault (e.g. accessing forbidden folders, mashing the keyboard unecessarily). And if it's running slowly then it's because you're on Windows because on my Linux partition it worked magnificently.
+If it's running slowly then it's because you're on Windows because on my Linux partition it worked magnificently.
 
 ## Features
 - **WORKS ON WINDOWS AND LINUX**

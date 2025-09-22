@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "listdir.h"
 
 #if defined(_WIN32)
@@ -19,7 +20,11 @@ textList* list_dir(char *path) {
     char pattern[MAX_PATH];
     snprintf(pattern, sizeof pattern, "%s\\*", path);
     HANDLE h = FindFirstFile(pattern, &fd);
-    if (h == INVALID_HANDLE_VALUE) return dir;
+    if (h == INVALID_HANDLE_VALUE) {
+        DWORD err = GetLastError();
+        tl.add(dir, "../");
+        return dir;
+    }
     do {
         char* name = fd.cFileName;
         if (strcmp(name, ".") == 0) continue;
@@ -29,7 +34,7 @@ textList* list_dir(char *path) {
         if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
             sprintf(namebuf, "%s/", name);
         } else {
-            sprintf(namebuf, "%s\0", name);
+            sprintf(namebuf, "%s", name);
         }
 
         tl.add(dir, namebuf);
@@ -37,16 +42,23 @@ textList* list_dir(char *path) {
     FindClose(h);
 #else
     DIR *d = opendir(path);
-    if (!d) return dir;
+    if (!d) {
+        tl.add(dir, "../");
+        return dir;
+    }
     struct dirent *ent;
     struct stat st;
-    int baseSze = strlen(path)+1;
+    int baseSze = strlen(path)+2;
     while ((ent = readdir(d)) != NULL) {
         char* name = ent->d_name;
         if (strcmp(name, ".") == 0) continue;
         char fullpath[baseSze+strlen(name)];
         sprintf(fullpath, "%s%s", path, name);
         if (strcmp(fullpath, "/..") == 0) continue;
+ 
+        if (stat(fullpath, &st) != 0) {  // Error occurred
+            continue;
+        }
 
         if (stat(fullpath, &st) == 0 && S_ISDIR(st.st_mode)) {
             char namebuf[strlen(name)+2];

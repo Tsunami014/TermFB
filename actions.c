@@ -80,6 +80,9 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
                 for (int i = 0; i < s->cursorY; i++) {
                     it = it->next;
                 }
+                if (it == NULL) {  // Not selecting anything
+                    return;
+                }
                 char* fname = it->text;
                 if (fname[strlen(fname)-1] == '/') {
                     if (strcmp(fname, "./") == 0) {
