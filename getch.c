@@ -218,3 +218,7 @@ returnEscape:;
     return esckr;
 }
 
+char toCtrl(char letter) {
+    return letter & 0x1F;
+}
+

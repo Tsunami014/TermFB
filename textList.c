@@ -30,12 +30,12 @@ void tl_add(textList* l, char* txt) {
     l->endIt = it;
 }
 
-char* tl_get(textList* l, int idx) {
+textItem* tl_get(textList* l, int idx) {
     textItem* it = l->startIt;
     for (int i = 0; i < idx; i++) {
         it = it->next;
     }
-    return it->text;
+    return it;
 }
 
 void tl_sort(textList* l, tlSortFunc sortFunc) {
@@ -119,19 +119,20 @@ const struct tlDefStruct tl = {
 };
 
 
-int sortAlphAsc(textItem** a, textItem** b) {
-    return strcmp((*a)->text, (*b)->text);
-}
-int sortAlphCIAsc(textItem** a, textItem** b) {    
+int sortDirs(textItem** a, textItem** b) {
+    const char *ta = (*a)->text;
+    const char *tb = (*b)->text;
+
+    if (strcmp(ta, "../") == 0) return -1;  // a forced in front
+    if (strcmp(tb, "../") == 0) return 1;    // b forced in front
 #ifdef _WIN32
-    return _stricmp((*a)->text, (*b)->text);
+    return _stricmp(ta, tb);
 #else
-    return strcasecmp((*a)->text, (*b)->text);
+    return strcasecmp(ta, tb);
 #endif
 }
 
 const struct tlSortDefStruct tlSort = {
-    .alphaAsc = sortAlphAsc,
-    .alphaCIAsc = sortAlphCIAsc
+    .dirs = sortDirs
 };
 

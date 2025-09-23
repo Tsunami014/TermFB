@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 #include "listdir.h"
 
 #if defined(_WIN32)
@@ -13,7 +12,7 @@
     #include <unistd.h>
 #endif
 
-textList* list_dir(char *path) {
+textList* list_dir(char* path) {
     textList* dir = tl.init();
 #if defined(_WIN32)
     WIN32_FIND_DATA fd;

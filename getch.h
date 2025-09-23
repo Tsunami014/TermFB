@@ -21,5 +21,6 @@ typedef struct {
 } keyReturn;
 
 keyReturn* getKey();
+char toCtrl(char letter);  // Turn a regular letter into a ctrl+letter keycode
 
 #endif

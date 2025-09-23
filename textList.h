@@ -19,7 +19,7 @@ typedef int (*tlSortFunc)(textItem** a, textItem** b);
 struct tlDefStruct {
     textList* (*init)(void);
     void (*add)(textList* l, char* txt);
-    char* (*get)(textList* l, int idx);
+    textItem* (*get)(textList* l, int idx);
     void (*sort)(textList* l, tlSortFunc sortFunc);
     textList* (*filter)(textList* l, char* filter);
     textList* (*copy)(textList* l);
@@ -27,8 +27,7 @@ struct tlDefStruct {
 };
 extern const struct tlDefStruct tl;  // Functions for working with text lists; use tl.init(...), tl.add(list, ...), etc.
 struct tlSortDefStruct {
-    tlSortFunc alphaAsc;  // Sort alphabetically in ascending order
-    tlSortFunc alphaCIAsc;  // Sort alphabetically Case Ignorant in ascending order
+    tlSortFunc dirs;  // Sort alphabetically in ascending order, case ignorant, ensuring '../' goes to the top
 };
 extern const struct tlSortDefStruct tlSort;
 

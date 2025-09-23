@@ -18,9 +18,13 @@ struct screenCol {
     void* data;
     // Header data
     char* header;
-    int cursorX;
-    // Render stuff
+    // Cursor stuff
     int cursorY;
+    int cursorX;
+    int lastCursorX;
+    int selectingRow;
+    char* selectedTxt;
+    // Render stuff
     int lastOffset;
     void* renderData;  // This is only updated, and therefore used, when rendering
 };

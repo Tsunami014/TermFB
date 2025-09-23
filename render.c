@@ -83,19 +83,27 @@ void printScrn(screenInfo* screen) {
     for (int i = 1; i < ln1-1; i++) mtRow[i] = ' ';
     mtRow[ln1-1] = '\0';
 
-    int SelectedOffset;
-    int cursorX;
+    screenCol* selectedCol;
     for (int i = 0; i < screen->length; i++) {
+        screenCol* col = &screen->cols[i];
         if (screen->cursorCol == i) {
-            SC.offset(&screen->cols[i], w.ws_row-2);
-            SelectedOffset = *(&screen->cols[i].lastOffset);
-            cursorX = screen->cols[i].cursorX;
+            SC.offset(col, w.ws_row-2);
+            selectedCol = col;
         }
-        SC.init(&screen->cols[i]);
+        SC.init(col);
     }
     for (int row = 0; row < w.ws_row-2; row++) {
         for (int part = 0; part < screen->length; part++) {
-            char* text = SC.step(&screen->cols[part]);
+            screenCol* col = &screen->cols[part];
+            int selecting = 0;
+            if (screen->cursorCol == part && \
+                    col->cursorY-col->lastOffset == row) {
+                selecting = 1;
+            }
+            char* text = SC.step(col);
+            if (selecting && col->selectingRow) {
+                text = col->selectedTxt;
+            }
             if (text == NULL) {
                 if (part == screen->length - 1) {
                     int spare = w.ws_col - (sectIdx * screen->length);
@@ -121,9 +129,14 @@ void printScrn(screenInfo* screen) {
                 extraSpaces[xtralen] = '\0';
 
                 wchar_t fmt[20];  // Enough for the maximum length the string can be (arbitrary number, should always work)
-                if (screen->cursorCol == part && \
-                    screen->cols[part].cursorY-SelectedOffset == row) {
-                    wcscpy(fmt, L"│\033[1;7m" A A "\033[0m");  // Add inverse & bold to the selected value
+                if (selecting) {
+                    wcscpy(fmt, L"│\033[");
+                    if (col->selectingRow) {
+                        wcscat(fmt, L"100");  // Make background different from inverse
+                    } else {
+                        wcscat(fmt, L"1;7");  // Add inverse & bold to the selected value
+                    }
+                    wcscat(fmt, L"m" A A L"\033[0m");
                 } else {
                     wcscpy(fmt, L"│" A A);
                 }
@@ -144,8 +157,14 @@ void printScrn(screenInfo* screen) {
     }
     wprintf(L"╰%ls╯", midLine);
 
-    int cursX = 2 + sectIdx*screen->cursorCol + cursorX;
-    wprintf(L"\033[1;%dH", cursX);  // Set cursor position
+    int cursY;
+    if (selectedCol->selectingRow) {
+        cursY = selectedCol->cursorY - selectedCol->lastOffset + 2;
+    } else {
+        cursY = 0;
+    }
+    int cursX = 2 + sectIdx*screen->cursorCol + selectedCol->cursorX;
+    wprintf(L"\033[%d;%dH", cursY, cursX);  // Set cursor position
     fflush(stdout);
 }
 
@@ -159,11 +178,16 @@ void init_help() {
         "General keys:\n"
         "  Shift+(left/right) to switch column\n"
         "  ? shows this help screen\n"
-        "  Esc exits the program\n"
-        "File directory keys:\n"
-        "  Up/down arrows (or tab/shift-tab keys) change selected folder (../ is go up a directory)\n"
-        "  Enter goes into selected directory\n"
-        "  Type to filter directory (backspace/delete also works)\n"
+        "  Ctrl+C exits the program\n"
+        "Command keys:\n"
+        "    (When using, press enter to confirm or ESC to exit)"
+        "  Ctrl+r to rename\n"
+        "  Ctrl+m to move\n"
+        "  Ctrl+d to delete (note with directories '-rf' needs to be added)\n"
+        "Action keys:\n"
+        "  Up/down arrows (or tab/shift-tab keys) change selected item\n"
+        "  Enter goes into selected directory (../ is go up a directory)\n"
+        "  Type to filter (backspace/delete also works)\n"
         "  Left/right arrow keys to move cursor to aid in inputting in filter\n"
 
         "\nYour config file is located in: " A "\n"

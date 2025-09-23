@@ -3,9 +3,34 @@
 #include <string.h>
 
 #include "actions.h"
+#include "getch.h"
 #include "renderStructs.h"
 #include "listdir.h"
 
+
+void tryEdit(screenCol* s, char* tmpl, int cursorPos) {
+    if (!s->selectingRow) {
+        char* text = tl.get(s->data, s->cursorY)->text;
+        if (strcmp(text, "../") == 0) {
+            return;
+        }
+        s->selectingRow = 1;
+        s->lastCursorX = s->cursorX;
+
+        // Find the new length
+        int len = snprintf(NULL, 0, tmpl, text);
+        if (len < 0) { perror("format error"); exit(EXIT_FAILURE); }
+        // Now write knowing the length
+        s->selectedTxt = malloc(len + 1);
+        if (!s->selectedTxt) { perror("malloc"); exit(EXIT_FAILURE); }
+        snprintf(s->selectedTxt, len + 1, tmpl, text);
+        if (cursorPos >= 0) {
+            s->cursorX = cursorPos;
+        } else {
+            s->cursorX = len - cursorPos - 1;
+        }
+    }
+}
 
 void filter_dirSC(screenCol* s) {
     textList* dat = s->data;
@@ -26,6 +51,12 @@ void filter_dirSC(screenCol* s) {
 }
 
 void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
+    char** editing;
+    if (s->selectingRow) {
+        editing = &s->selectedTxt;
+    } else {
+        editing = &s->header;
+    }
     if (key == '\t') {
         onArrowPress(screen, s, 'd');
         return;
@@ -36,29 +67,37 @@ void onDirectoryKeyPress(screenInfo* screen, screenCol* s, char key) {
     }
     if (key == '\x7F' || key == '\b') {  // Backspace
         if (s->cursorX == 0) return;
-        size_t len = strlen(s->header);
-        memmove(s->header + s->cursorX - 1, s->header + s->cursorX, len - s->cursorX + 1);
-        s->header = realloc(s->header, len);
-        if (!s->header) { perror("realloc"); exit(EXIT_FAILURE); }
+        size_t len = strlen(*editing);
+        memmove(*editing + s->cursorX - 1, *editing + s->cursorX, len - s->cursorX + 1);
+        *editing = realloc(*editing, len);
+        if (!*editing) { perror("realloc"); exit(EXIT_FAILURE); }
         s->cursorX--;
-        filter_dirSC(s);
+        if (!s->selectingRow) {
+            filter_dirSC(s);
+        }
         return;
     }
     if (key == '\x1E') {  // My delete character
-        size_t len = strlen(s->header);
+        size_t len = strlen(*editing);
         if (s->cursorX >= len) return;
-        memmove(s->header + s->cursorX, s->header + s->cursorX + 1, len - s->cursorX);
-        s->header = realloc(s->header, len);
-        if (!s->header) { perror("realloc"); exit(EXIT_FAILURE); }
-        filter_dirSC(s);
+        memmove(*editing + s->cursorX, *editing + s->cursorX + 1, len - s->cursorX);
+        *editing = realloc(*editing, len);
+        if (!*editing) { perror("realloc"); exit(EXIT_FAILURE); }
+        if (!s->selectingRow) {
+            filter_dirSC(s);
+        }
         return;
     }
-    size_t nlen = strlen(s->header)+1;
-    s->header = realloc(s->header, nlen+1);
-    if (!s->header) { perror("realloc"); exit(EXIT_FAILURE); }
-    memmove(s->header + s->cursorX + 1, s->header + s->cursorX, nlen - s->cursorX + 1);
-    s->header[s->cursorX++] = key;
-    filter_dirSC(s);
+    if (key >= 32 && key <= 126) {  // Printable character
+        size_t nlen = strlen(*editing)+1;
+        *editing = realloc(*editing, nlen+1);
+        if (!*editing) { perror("realloc"); exit(EXIT_FAILURE); }
+        memmove(*editing + s->cursorX + 1, *editing + s->cursorX, nlen - s->cursorX + 1);
+        (*editing)[s->cursorX++] = key;
+        if (!s->selectingRow) {
+            filter_dirSC(s);
+        }
+    }
 }
 
 
@@ -71,9 +110,40 @@ void blankHeader(screenCol* s) {
 }
 
 void onKeyPress(screenInfo* screen, screenCol* s, char key) {
-    switch (s->use) {
-        case DIRECTORY_VIEW:
+    if (s->use == DIRECTORY_VIEW || s->use == DIRECTORY_SELECT) {
+        if (s->use == DIRECTORY_VIEW) {
+            if (key == toCtrl('r')) {
+                tryEdit(s, "mv %1$s %1$s", -1);
+                return;
+            }
+            if (key == toCtrl('m')) {
+                tryEdit(s, "mv %s ", -1);
+                return;
+            }
+            if (key == toCtrl('d')) {
+                tryEdit(s, "rm %s", 3);
+                return;
+            }
             if (key == '\n' || key == '\r') {
+                if (s->selectingRow) {
+                    char* pth = ((dirViewInfo*)((textList*)s->data)->info)->path;
+                    char fullCmd[3+strlen(pth)+1+strlen(s->selectedTxt)];
+                    strcpy(fullCmd, "cd ");
+                    strcat(fullCmd, pth);
+                    strcat(fullCmd, ";");
+                    strcat(fullCmd, s->selectedTxt);
+                    system(fullCmd);
+                    textList* newL = list_dir(pth);  // Do this before freeing so the path doesn't turn to mush
+                    tl.sort(newL, tlSort.dirs);
+                    dl.free(s->data);
+                    s->data = newL;
+
+                    s->selectingRow = 0;
+                    s->cursorX = s->lastCursorX;
+                    free(s->selectedTxt);
+                    s->selectedTxt = NULL;
+                    return;
+                }
                 textList* txtL = s->data;
                 dirViewInfo* dvi = txtL->info;
                 textItem* it = txtL->startIt;
@@ -113,23 +183,58 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
                     char* npath = strdup(dvi->path);
                     dl.free(s->data);
                     s->data = list_dir(npath);
-                    tl.sort(s->data, tlSort.alphaCIAsc);
+                    tl.sort(s->data, tlSort.dirs);
                     dl.setup(s->data, npath);
                     blankHeader(s);
                 }
                 return;
             }
-            onDirectoryKeyPress(screen, s, key);
-            break;
-        case DIRECTORY_SELECT:
+        } else {
+            if (key == toCtrl('r') || key == toCtrl('m')) {
+                tryEdit(s, "%s", -1);
+                return;
+            }
+            if (key == toCtrl('d')) {
+                textList* l = s->data;
+                if (s->cursorY == 0) {
+                    if (l->startIt == NULL) return;
+                    if (l->length-- == 0) {
+                        free(l->startIt);
+                        l->startIt = NULL;
+                        l->endIt = NULL;
+                    } else {
+                        l->startIt = l->startIt->next;
+                    }
+                } else {
+                    textItem* befIt = tl.get(l, s->cursorY-1);
+                    if (s->cursorY == --l->length) {
+                        befIt->next = NULL;
+                        l->endIt = befIt;
+                        s->cursorY--;
+                    } else {
+                        befIt->next = befIt->next->next;
+                    }
+                }
+                return;
+            }
             if (key == '\n' || key == '\r') {
+                if (s->selectingRow) {
+                    s->selectingRow = 0;
+                    // Swap the pointers; the text now becomes the selected text and selected text becomes NULL
+                    char** txt = &tl.get((textList*)s->data, s->cursorY)->text;
+                    free(*txt);  // Remove old text
+                    *txt = s->selectedTxt;
+                    s->selectedTxt = NULL;
+                    s->cursorX = s->lastCursorX;
+                    return;
+                }
                 for (int i = 0; i < screen->length; i++) {  // This means there can only be one directory view
                     if (screen->cols[i].use == DIRECTORY_VIEW) {
                         screenCol* col = &screen->cols[i];
                         blankHeader(col);  // Clear next column's header
-                        char* path = expand_tilde(tl.get(col->data, col->cursorY));
+                        char* path = expand_tilde(tl.get(col->data, col->cursorY)->text);
                         textList* dir = list_dir(path);
-                        tl.sort(dir, tlSort.alphaCIAsc);
+                        tl.sort(dir, tlSort.dirs);
                         dl.setup(dir, path);
                         dl.free(col->data);
                         col->data = dir;
@@ -141,8 +246,8 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
                 }
                 return;
             }
-            onDirectoryKeyPress(screen, s, key);
-            break;
+        }
+        onDirectoryKeyPress(screen, s, key);
     }
 }
 

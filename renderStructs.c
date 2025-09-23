@@ -77,7 +77,12 @@ void SC_move_Header_Cursor(screenCol* col, int dx) {
     if (new <= 0) {
         new = 0;
     } else {
-        int max = strlen(col->header);
+        int max;
+        if (col->selectingRow) {
+            max = strlen(col->selectedTxt);
+        } else {
+            max = strlen(col->header);
+        }
         if (new > max) {
             new = max;
         }
@@ -87,6 +92,9 @@ void SC_move_Header_Cursor(screenCol* col, int dx) {
 
 void SC_free(screenCol* col) {
     free(col->header);
+    if (col->selectedTxt != NULL) {
+        free(col->selectedTxt);
+    }
     switch (col->typ) {
         case WORDLIST:
             tl.free(col->data);
@@ -128,8 +136,11 @@ void scr_add(screenInfo* s, void* col, screenColTypes typ, screenColUses use) {
     ncol->header = malloc(1);
     if (!ncol->header) { perror("malloc"); exit(EXIT_FAILURE); }
     ncol->header[0] = '\0';
+    ncol->lastCursorX = 0;
     ncol->cursorX = 0;
     ncol->cursorY = 0;
+    ncol->selectingRow = 0;
+    ncol->selectedTxt = NULL;
     ncol->lastOffset = 0;
 }
 

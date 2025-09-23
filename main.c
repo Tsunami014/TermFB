@@ -24,7 +24,7 @@ int main(void) {
 
     scr.add(screen, init_config(), WORDLIST, DIRECTORY_SELECT);
     textList* dir = list_dir(startingPath);
-    tl.sort(dir, tlSort.alphaCIAsc);
+    tl.sort(dir, tlSort.dirs);
     dl.setup(dir, startingPath);
     scr.add(screen, dir, WORDLIST, DIRECTORY_VIEW);
     screen->cursorCol = 1;
@@ -46,11 +46,21 @@ int main(void) {
                 }
                 break;
             }
-            case ESCAPE_KEY:
-                wprintf(L"\033[2J\033[H");
-                fflush(stdout);
-                exit(EXIT_SUCCESS);
+            case ESCAPE_KEY:;
+                screenCol* s = &screen->cols[screen->cursorCol];
+                if (s->selectingRow) {
+                    s->selectingRow = 0;
+                    s->cursorX = s->lastCursorX;
+                    free(s->selectedTxt);
+                    s->selectedTxt = NULL;
+                }
+                break;
             case REGULAR_KEY:
+                if (chr->key == '\03') {
+                    wprintf(L"\033[2J\033[H");
+                    fflush(stdout);
+                    return 0;
+                }
                 if (chr->key == '?') {
                     int i = 0;
                     while (i != -1) {
