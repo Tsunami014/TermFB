@@ -32,6 +32,118 @@ void tryEdit(screenCol* s, char* tmpl, int cursorPos) {
     }
 }
 
+char* runCmd(screenCol* s) {
+    char* cmd;
+    char* args;
+    char* tok = strtok(s->selectedTxt, " ");
+    if (tok == NULL) {
+        return strdup("Must have a command!");
+    }
+    char* fstTok = strdup(tok);
+    if (strcmp(fstTok, "rm") == 0 || strcmp(fstTok, "mk") == 0) {
+        tok = strtok(NULL, " ");
+        if (tok == NULL) {
+            return strdup("Must have 1 argument, found 0!");
+        }
+        int isdir;
+        if (tok[strlen(tok)] == '/') {
+            isdir = 1;
+        } else {
+            isdir = 0;
+        }
+
+        if (strcmp(fstTok, "mk") == 0) {
+            if (isdir) {
+                cmd = strdup("mkdir");
+            } else {
+                cmd = strdup("touch");
+            }
+        } else {
+            cmd = strdup("rm -rf");
+        }
+        args = strdup(tok);
+        tok = strtok(NULL, " ");
+        if (tok != NULL) {
+            free(args);
+            free(cmd);
+            free(fstTok);
+            return strdup("Found more than 1 argument!");
+        }
+    } else if (strcmp(fstTok, "cp") == 0 || strcmp(fstTok, "rn") == 0 || strcmp(fstTok, "mv") == 0) {
+        tok = strtok(NULL, " ");
+        if (tok == NULL) {
+            free(fstTok);
+            return strdup("Must have 2 arguments, found 0!");
+        }
+        char* arg1 = strdup(tok);
+        tok = strtok(NULL, " ");
+        if (tok == NULL) {
+            free(arg1);
+            free(fstTok);
+            return strdup("Must have 2 arguments, found 1!");
+        }
+        char* arg2 = strdup(tok);
+        tok = strtok(NULL, " ");
+        if (tok != NULL) {
+            free(arg1);
+            free(arg2);
+            free(fstTok);
+            return strdup("Found more than 2 arguments!");
+        }
+        args = malloc(strlen(arg1)+1+strlen(arg2));
+        if (!args) { perror("malloc"); exit(EXIT_FAILURE); }
+        strcpy(args, arg1);
+        strcat(args, " ");
+        strcat(args, arg2);
+        if (strcmp(fstTok, "rn") == 0) {
+            cmd = strdup("mv");
+        } else {
+            cmd = strdup(fstTok);
+        }
+    } else {
+        free(fstTok);
+        return strdup("Unknown command!");
+    }
+    free(fstTok);
+
+    char* pth = ((dirViewInfo*)((textList*)s->data)->info)->path;
+#define fmt "(cd %s;%s %s) 2>&1"
+    size_t needed = snprintf(NULL, 0, fmt, pth, cmd, args) + 1;
+    char* fullCmd = malloc(needed);
+    if (!fullCmd) { perror("malloc"); exit(EXIT_FAILURE); }
+    snprintf(fullCmd, needed, fmt, pth, cmd, args);
+
+    // TODO: Allow for deletion to recycle bin
+    FILE *p = popen(fullCmd, "r");
+    if (!p) return NULL;
+    FILE *tmp = tmpfile();
+    if (!tmp) { perror("tmpfile"); return NULL; }
+    char buf[4096];
+    size_t total = 0;
+    while (!feof(p)) {
+        size_t n = fread(buf, 1, sizeof buf, p);
+        fwrite(buf, 1, n, tmp);
+        total += n;
+    }
+    pclose(p);
+    char *out = malloc(total + 1);
+    if (!out) { perror("tmpfile"); return NULL; }
+
+    rewind(tmp);
+    fread(out, 1, total, tmp);
+    out[total] = '\0';
+    fclose(tmp);
+
+    free(cmd);
+    free(args);
+    free(fullCmd);
+    textList* newL = list_dir(pth);  // Do this before freeing so the path doesn't turn to mush
+    tl.sort(newL, tlSort.dirs);
+    dl.free(s->data);
+    s->data = newL;
+    return out;
+}
+
 void filter_dirSC(screenCol* s) {
     textList* dat = s->data;
     textList* newL = tl.filter(((dirViewInfo*)dat->info)->curDir, s->header);  // Get a filtered copy of the original
@@ -110,6 +222,12 @@ void blankHeader(screenCol* s) {
 }
 
 void onKeyPress(screenInfo* screen, screenCol* s, char key) {
+    if (s->use == TEMPORARY) {
+        if (screen->cursorCol >= --screen->length) {
+            screen->cursorCol = screen->length-1;
+        }
+        SC.free(s);
+    }
     if (s->use == DIRECTORY_VIEW || s->use == DIRECTORY_SELECT) {
         if (s->use == DIRECTORY_VIEW) {
             if (key == toCtrl('r')) {
@@ -121,27 +239,36 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
                 return;
             }
             if (key == toCtrl('d')) {
-                tryEdit(s, "rm %s", 3);
+                tryEdit(s, "rm %s", -1);
+                return;
+            }
+            if (key == toCtrl('c')) {
+                tryEdit(s, "cp %1$s %1$s", -1);
+                return;
+            }
+            if (key == toCtrl('a')) {
+                tl.add(s->data, "");
+                s->cursorY = ((textList*)s->data)->length-1;
+                tryEdit(s, "mk ", -1);
                 return;
             }
             if (key == '\n' || key == '\r') {
                 if (s->selectingRow) {
-                    char* pth = ((dirViewInfo*)((textList*)s->data)->info)->path;
-                    char fullCmd[3+strlen(pth)+1+strlen(s->selectedTxt)];
-                    strcpy(fullCmd, "cd ");
-                    strcat(fullCmd, pth);
-                    strcat(fullCmd, ";");
-                    strcat(fullCmd, s->selectedTxt);
-                    system(fullCmd);
-                    textList* newL = list_dir(pth);  // Do this before freeing so the path doesn't turn to mush
-                    tl.sort(newL, tlSort.dirs);
-                    dl.free(s->data);
-                    s->data = newL;
+                    char* outp = runCmd(s);
+                    textList* outL = tl.init();
+                    char* tok = strtok(outp, "\n");
+                    while (tok != NULL) {
+                        tl.add(outL, tok);
+                        tok = strtok(NULL, "\n");
+                    }
+                    free(outp);
 
                     s->selectingRow = 0;
                     s->cursorX = s->lastCursorX;
                     free(s->selectedTxt);
                     s->selectedTxt = NULL;
+                    scr.add(screen, outL, WORDLIST, TEMPORARY);
+                    screen->cursorCol = 2;
                     return;
                 }
                 textList* txtL = s->data;
@@ -225,6 +352,7 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
                     free(*txt);  // Remove old text
                     *txt = s->selectedTxt;
                     s->selectedTxt = NULL;
+                    // TODO: Save textList back to config file
                     s->cursorX = s->lastCursorX;
                     return;
                 }
