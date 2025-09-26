@@ -63,7 +63,7 @@ struct scrDefStruct {
 };
 extern const struct scrDefStruct scr;
 
-void makeTempCol(screenInfo* screen, char* txt);
+void makeTempCol(screenInfo* screen, char* txt, screenColUses use);
 
 #endif
 

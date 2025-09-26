@@ -224,7 +224,12 @@ const struct scrDefStruct scr = {
     .free = scr_free
 };
 
-void makeTempCol(screenInfo* screen, char* txt) {
+void makeTempCol(screenInfo* screen, char* txt, screenColUses use) {
+    for (int i = 0; i < screen->length; i++) {
+        if (screen->cols[i].use == use) {
+            return;  // No duplicate screens
+        }
+    }
     textList* outL = tl.init();
     char* tok = strtok(txt, "\n");
     while (tok != NULL) {
@@ -233,7 +238,7 @@ void makeTempCol(screenInfo* screen, char* txt) {
     }
     free(txt);
 
-    scr.add(screen, outL, TEMPORARY, NOUSE);
+    scr.add(screen, outL, TEMPORARY, use);
     screen->cursorCol = screen->length-1;
 }
 

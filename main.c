@@ -63,7 +63,7 @@ int main(void) {
                     return 0;
                 }
                 if (chr->key == '?') {
-                    makeTempCol(screen, strdup(helpTxt));
+                    makeTempCol(screen, strdup(helpTxt), HELPUSE);
                 } else {
                     onKeyPress(screen, &screen->cols[screen->cursorCol], chr->key);
                 }

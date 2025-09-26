@@ -260,7 +260,7 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
             }
             if (key == '\n' || key == '\r') {
                 if (s->selectingRow) {
-                    makeTempCol(screen, runCmd(s));
+                    makeTempCol(screen, runCmd(s), NOUSE);
                     s->selectingRow = 0;
                     s->cursorX = s->lastCursorX;
                     free(s->selectedTxt);
