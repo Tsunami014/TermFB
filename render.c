@@ -204,3 +204,26 @@ void init_help() {
     snprintf(helpTxt, bufsize, template, confPath);
 }
 
+void onExit(screenInfo* screen) {
+    // Clear the screen
+    wprintf(L"\033[2J\033[H");
+    fflush(stdout);
+    char* pth = ((dirViewInfo*)((textList*)screen->cols[1].data)->info)->path;
+#ifdef _WIN32
+    FILE *f = fopen("C:\\temp\\termfb_dir.txt", "w");
+    fprintf(f, "%s\n", pth);
+    fclose(f);
+#else
+    // Write to a special file descriptor the output directory for use in other programs
+    int fd = 3;
+    FILE *f = fdopen(fd, "w");
+    if (!f) {
+        perror("fdopen");
+        return;
+    }
+    fprintf(f, "%s\n", pth);
+    fflush(f);
+    fclose(f);
+#endif
+}
+

@@ -1,11 +1,12 @@
+OUTNAME=termfb
 CC=gcc
 CFLAGS=
 
 ifeq ($(OS),Windows_NT)
-    OUT=termfb.exe
+    OUT=$(OUTNAME).exe
     RM=del $(OUT)
 else
-    OUT=termfb
+    OUT=$(OUTNAME)
     RM=rm -rf $(OUT)
 endif
 

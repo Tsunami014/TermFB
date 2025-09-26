@@ -20,13 +20,21 @@ int main(void) {
     wprintf(L"\033[2J\033[H");
     fflush(stdout);
 
-    char* startingPath = expand_tilde("~/");
+    char* tmpcwd = getcwd(NULL, 0);
+    if (!tmpcwd) {
+        perror("getcwd failed");
+        return 1;
+    }
+    char* cwd = malloc(strlen(tmpcwd)+2);
+    strcpy(cwd, tmpcwd);
+    free(tmpcwd);
+    strcat(cwd, "/");
     screenInfo* screen = scr.init();
 
     scr.add(screen, init_config(), WORDLIST, DIRECTORY_SELECT);
-    textList* dir = list_dir(startingPath);
+    textList* dir = list_dir(cwd);
     tl.sort(dir, tlSort.dirs);
-    dl.setup(dir, startingPath);
+    dl.setup(dir, cwd);
     scr.add(screen, dir, WORDLIST, DIRECTORY_VIEW);
     screen->cursorCol = 1;
     init_help();  // Must come after init_comig
@@ -58,8 +66,7 @@ int main(void) {
                 break;
             case REGULAR_KEY:
                 if (chr->key == '\03') {
-                    wprintf(L"\033[2J\033[H");
-                    fflush(stdout);
+                    onExit(screen);
                     return 0;
                 }
                 if (chr->key == '?') {

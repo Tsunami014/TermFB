@@ -23,6 +23,12 @@
                 SetConsoleMode(hOut, mode);
             }
         }
+        // Do not swallow ctrl+c
+        DWORD mode;
+        HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+        GetConsoleMode(hIn, &mode);
+        mode &= ~ENABLE_PROCESSED_INPUT; // allow raw Ctrl-C
+        SetConsoleMode(hIn, mode);
         // Make stdout wide (UTF-16) so wprintf prints box-drawing correctly
         _setmode(_fileno(stdout), 0x20000);
     }
@@ -44,7 +50,7 @@
         struct termios newt;
         tcgetattr(STDIN_FILENO, &orig_termios);
         newt = orig_termios;
-        newt.c_lflag &= ~(ICANON | ECHO);  // raw mode, no echo
+        newt.c_lflag &= ~(ICANON | ECHO | ISIG);  // raw mode, no echo, no signals
         tcsetattr(STDIN_FILENO, TCSANOW, &newt);
         atexit(reset_terminal);  // ensure terminal is restored on exit
     }

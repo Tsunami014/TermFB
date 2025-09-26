@@ -356,7 +356,7 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
                     if (screen->cols[i].use == DIRECTORY_VIEW) {
                         screenCol* col = &screen->cols[i];
                         blankHeader(col);  // Clear next column's header
-                        char* path = expand_tilde(tl.get(col->data, col->cursorY)->text);
+                        char* path = expand_tilde(tl.get(s->data, s->cursorY)->text);
                         textList* dir = list_dir(path);
                         tl.sort(dir, tlSort.dirs);
                         dl.setup(dir, path);
