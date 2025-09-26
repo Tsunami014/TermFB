@@ -94,7 +94,7 @@ void SC_offset(screenCol* col, int maxRows) {
 
 void SC_move_selection(screenCol* col, int chngRows) {
     int new = col->cursorY + chngRows;
-    if (new <= 0) {
+    if (new < 0) {
         new = 0;
         if (chngRows < 0) {
             new = SC_len(col) + chngRows;
