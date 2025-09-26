@@ -20,11 +20,15 @@ void SC_init(screenCol* col) {
                 col->renderData = ((textItem*)col->renderData)->next;
             }
             return;
+        case TEMPORARY:;
+            tmpRendDat* rendDat = col->renderData;
+            rendDat->rendOffs = 0;
+            return;
     }
 }
 
 
-char* SC_step(screenCol* col) {
+char* SC_step(screenCol* col, int scrWid) {
     switch (col->typ) {
         case WORDLIST:
             if (col->renderData == NULL) {
@@ -32,12 +36,35 @@ char* SC_step(screenCol* col) {
             }
             char* ret = ((textItem*)col->renderData)->text;
             col->renderData = ((textItem*)col->renderData)->next;
-            return ret;
+            return strdup(ret);
+        case TEMPORARY:;
+            tmpRendDat* rd = col->renderData;
+            if (rd->nxt == NULL) {
+                return NULL;
+            }
+            char* txt = rd->nxt->text + rd->rendOffs;
+            int len = strlen(txt);
+            int xtra = len >= scrWid-1;
+            if (xtra) {
+                len = scrWid-2;
+                rd->rendOffs += len;
+            } else {
+                rd->nxt = rd->nxt->next;
+                rd->rendOffs = 0;
+            }
+            char* nstr = malloc(len+xtra+1);
+            if (!nstr) { perror("malloc"); exit(EXIT_FAILURE); }
+            strncpy(nstr, txt, len);
+            if (xtra) {
+                nstr[len+1] = '\\';
+            }
+            return nstr;
     }
 }
 
 int SC_len(screenCol* col) {
     switch (col->typ) {
+        case TEMPORARY:
         case WORDLIST:
             return ((textList*)col->data)->length;
     }
@@ -98,7 +125,10 @@ void SC_free(screenCol* col) {
     switch (col->typ) {
         case WORDLIST:
             tl.free(col->data);
-            return;
+            break;
+        case TEMPORARY:
+            free(col->renderData);
+            break;
     }
 }
 
@@ -142,6 +172,12 @@ void scr_add(screenInfo* s, void* col, screenColTypes typ, screenColUses use) {
     ncol->selectingRow = 0;
     ncol->selectedTxt = NULL;
     ncol->lastOffset = 0;
+    if (typ == TEMPORARY) {
+        tmpRendDat* newRD = malloc(sizeof(tmpRendDat));
+        if (!newRD) { perror("malloc"); exit(EXIT_FAILURE); }
+        newRD->nxt = ((textList*)col)->startIt;
+        ncol->renderData = newRD;
+    }
 }
 
 void scr_setCur(screenInfo* s, int newCol) {
@@ -185,4 +221,17 @@ const struct scrDefStruct scr = {
     .shuffle = scr_shuffle,
     .free = scr_free
 };
+
+void makeTempCol(screenInfo* screen, char* txt) {
+    textList* outL = tl.init();
+    char* tok = strtok(txt, "\n");
+    while (tok != NULL) {
+        tl.add(outL, tok);
+        tok = strtok(NULL, "\n");
+    }
+    free(txt);
+
+    scr.add(screen, outL, TEMPORARY, NOUSE);
+    screen->cursorCol = screen->length-1;
+}
 

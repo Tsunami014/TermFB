@@ -222,11 +222,14 @@ void blankHeader(screenCol* s) {
 }
 
 void onKeyPress(screenInfo* screen, screenCol* s, char key) {
-    if (s->use == TEMPORARY) {
-        if (screen->cursorCol >= --screen->length) {
-            screen->cursorCol = screen->length-1;
+    if (s->typ == TEMPORARY) {
+        if (((tmpRendDat*)s->renderData)->nxt == NULL) {
+            if (screen->cursorCol >= --screen->length) {
+                screen->cursorCol = screen->length-1;
+            }
+            SC.free(s);
         }
-        SC.free(s);
+        return;
     }
     if (s->use == DIRECTORY_VIEW || s->use == DIRECTORY_SELECT) {
         if (s->use == DIRECTORY_VIEW) {
@@ -254,21 +257,11 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
             }
             if (key == '\n' || key == '\r') {
                 if (s->selectingRow) {
-                    char* outp = runCmd(s);
-                    textList* outL = tl.init();
-                    char* tok = strtok(outp, "\n");
-                    while (tok != NULL) {
-                        tl.add(outL, tok);
-                        tok = strtok(NULL, "\n");
-                    }
-                    free(outp);
-
+                    makeTempCol(screen, runCmd(s));
                     s->selectingRow = 0;
                     s->cursorX = s->lastCursorX;
                     free(s->selectedTxt);
                     s->selectedTxt = NULL;
-                    scr.add(screen, outL, WORDLIST, TEMPORARY);
-                    screen->cursorCol = 2;
                     return;
                 }
                 textList* txtL = s->data;
@@ -396,6 +389,10 @@ void onArrowPress(screenInfo* screen, screenCol* s, char arrow) {
                     SC.mvHCurs(s, 1);
                     return;
             }
+            return;
+        case TEMPORARY:
+            onKeyPress(screen, s, arrow);  // The onKeyPress for any temporary column does the same thing regardless of what key is pressed
+            return;
     }
 }
 

@@ -6,7 +6,7 @@
 typedef enum {
     DIRECTORY_VIEW,
     DIRECTORY_SELECT,
-    TEMPORARY,
+    NOUSE,
 } screenColUses;
 
 textList* init_actions(char* startingPath);

@@ -100,7 +100,11 @@ void printScrn(screenInfo* screen) {
                     col->cursorY-col->lastOffset == row) {
                 selecting = 1;
             }
-            char* text = SC.step(col);
+            int totlen = sectIdx-1;
+            if (part == screen->length - 1) {
+                totlen += w.ws_col - (sectIdx * screen->length) - 1;
+            }
+            char* text = SC.step(col, totlen);
             if (selecting && col->selectingRow) {
                 text = col->selectedTxt;
             }
@@ -115,14 +119,13 @@ void printScrn(screenInfo* screen) {
                     wprintf(L"%ls ", mtRow);
                 }
             } else {
-                int totlen = sectIdx-1;
                 wchar_t* xtra = L"";
                 if (part == screen->length - 1) {
-                    int spare = w.ws_col - (sectIdx * screen->length) - 1;
-                    totlen += spare;
                     xtra = L"│\n";
                 }
-                text = cutoff(text, totlen);
+                if (col->typ != TEMPORARY) {  // We know that the temporary column will never be too long
+                    text = cutoff(text, totlen);
+                }
                 int xtralen = totlen-strlen(text);
                 char extraSpaces[xtralen+1];
                 for (int i = 0; i < xtralen; i++) extraSpaces[i] = ' ';

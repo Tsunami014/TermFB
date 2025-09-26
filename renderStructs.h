@@ -4,10 +4,16 @@
 #include "textList.h"
 #include "actions.h"
 
-#define MAX_SCREEN_COLS 3
+#define MAX_SCREEN_COLS 4
+
+typedef struct {
+    textItem* nxt;
+    int rendOffs;  // Offset while rendering for lines that have been broken up
+} tmpRendDat;
 
 typedef enum {
-    WORDLIST
+    WORDLIST,
+    TEMPORARY,
 } screenColTypes;
 
 struct screenCol {
@@ -26,12 +32,12 @@ struct screenCol {
     char* selectedTxt;
     // Render stuff
     int lastOffset;
-    void* renderData;  // This is only updated, and therefore used, when rendering
+    void* renderData;  // Implementation varies based on typ
 };
 
 struct SCDefStruct {
-    void (*init)(screenCol* col);
-    char* (*step)(screenCol* col);
+    void (*init)(screenCol* col);  // The start of the render loop
+    char* (*step)(screenCol* col, int scrWid);  // Each step along the render loop, returning the row
     int (*len)(screenCol* col);
     void (*offset)(screenCol* col, int maxRows);
     void (*mvSelect)(screenCol* col, int chngRows);
@@ -55,6 +61,8 @@ struct scrDefStruct {
     void (*free)(screenInfo* s);
 };
 extern const struct scrDefStruct scr;
+
+void makeTempCol(screenInfo* screen, char* txt);
 
 #endif
 
