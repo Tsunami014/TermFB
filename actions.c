@@ -223,11 +223,14 @@ void blankHeader(screenCol* s) {
 
 void onKeyPress(screenInfo* screen, screenCol* s, char key) {
     if (s->typ == TEMPORARY) {
-        if (((tmpRendDat*)s->renderData)->nxt == NULL) {
+        tmpRendDat* rd = s->renderData;
+        if (rd->nxt == NULL || rd->nxt->next == NULL) {
             if (screen->cursorCol >= --screen->length) {
                 screen->cursorCol = screen->length-1;
             }
             SC.free(s);
+        } else {
+            rd->nxt = rd->nxt->next;
         }
         return;
     }
@@ -391,7 +394,6 @@ void onArrowPress(screenInfo* screen, screenCol* s, char arrow) {
             }
             return;
         case TEMPORARY:
-            onKeyPress(screen, s, arrow);  // The onKeyPress for any temporary column does the same thing regardless of what key is pressed
             return;
     }
 }

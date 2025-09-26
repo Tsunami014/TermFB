@@ -171,13 +171,11 @@ void printScrn(screenInfo* screen) {
     fflush(stdout);
 }
 
-static char* helpTxt;
-static int helpTxtLen;
+char* helpTxt;
 
 void init_help() {
     const char* template =
         "HELP\n"
-        "  (Press space to scroll this page if required)\n"
         "General keys:\n"
         "  Shift+(left/right) to switch column\n"
         "  ? shows this help screen\n"
@@ -199,71 +197,10 @@ void init_help() {
         "  Type to filter (backspace/delete also works)\n"
         "  Left/right arrow keys to move cursor to aid in inputting in filter\n"
 
-        "\nYour config file is located in: " A "\n"
-        "Press space to exit\n";
+        "\nYour config file is located in: " A "\n";
     size_t bufsize = strlen(template) + strlen(confPath) + 1;
     helpTxt = malloc(bufsize);
     if (!helpTxt) { perror("malloc"); exit(EXIT_FAILURE); }
     snprintf(helpTxt, bufsize, template, confPath);
-
-    helpTxtLen = strlen(helpTxt);
-}
-
-int printHelp(int idx) {
-    wprintf(L"\033[2J\033[H");
-    fflush(stdout);
-    struct winsize w;
-    get_terminal_size(&w);
-    if (w.ws_col <= 2) {
-        perror("Terminal too thin!");
-        exit(EXIT_FAILURE);
-    }
-
-    int ln = w.ws_col-1;
-    wchar_t horizline[ln];
-    for (int i = 0; i < ln-1; i++) horizline[i] = L'─';
-    horizline[ln-1] = '\0';
-    wprintf(L"╭%ls╮\n", horizline);
-    char mtline[ln];
-    for (int i = 0; i < ln-1; i++) mtline[i] = ' ';
-    mtline[ln-1] = '\0';
-
-    int maxWid = w.ws_col-2;
-    int linesLeft = w.ws_row - 2;
-    while (linesLeft > 0 && idx < helpTxtLen) {
-        linesLeft--;
-        const char* nxtNL = strchr(helpTxt + idx, '\n');
-        int indexOffs;
-        int xtra = 0;
-        if (nxtNL) {
-            indexOffs = nxtNL - helpTxt - idx;
-            if (indexOffs > maxWid) {
-                indexOffs = maxWid;
-            } else {
-                xtra = 1;
-            }
-        } else {
-            indexOffs = maxWid;
-        }
-        int nIdx = idx + indexOffs;
-        if (nIdx > helpTxtLen) {
-            nIdx = helpTxtLen;
-        }
-        int xtraSpace = maxWid - (nIdx - idx);
-        char spacing[xtraSpace+1];
-        for (int i = 0; i < xtraSpace; i++) spacing[i] = ' ';
-        spacing[xtraSpace] = '\0';
-        wprintf(L"│%.*" A2 A L"│\n", nIdx-idx, helpTxt+idx, spacing);
-        idx = nIdx+xtra;
-    }
-    for (int i = 0; i < linesLeft; i++) {
-        wprintf(L"│" A L"│\n", mtline);
-    }
-    wprintf(L"╰%ls╯", horizline);
-    fflush(stdout);
-    if (idx >= helpTxtLen) {
-        idx = -1;
-    }
-    return idx;
 }
 

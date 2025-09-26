@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 #ifdef _WIN32
     #include <windows.h>
@@ -62,11 +63,7 @@ int main(void) {
                     return 0;
                 }
                 if (chr->key == '?') {
-                    int i = 0;
-                    while (i != -1) {
-                        i = printHelp(i);
-                        while (getThatCh() != ' ') {}  // Must wait for space
-                    }
+                    makeTempCol(screen, strdup(helpTxt));
                 } else {
                     onKeyPress(screen, &screen->cols[screen->cursorCol], chr->key);
                 }

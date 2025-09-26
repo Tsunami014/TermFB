@@ -8,6 +8,7 @@
 
 typedef struct {
     textItem* nxt;
+    textItem* tmpnxt;
     int rendOffs;  // Offset while rendering for lines that have been broken up
 } tmpRendDat;
 

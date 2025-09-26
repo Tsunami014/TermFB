@@ -22,6 +22,7 @@ void SC_init(screenCol* col) {
             return;
         case TEMPORARY:;
             tmpRendDat* rendDat = col->renderData;
+            rendDat->tmpnxt = rendDat->nxt;
             rendDat->rendOffs = 0;
             return;
     }
@@ -39,24 +40,24 @@ char* SC_step(screenCol* col, int scrWid) {
             return strdup(ret);
         case TEMPORARY:;
             tmpRendDat* rd = col->renderData;
-            if (rd->nxt == NULL) {
+            if (rd->tmpnxt == NULL) {
                 return NULL;
             }
-            char* txt = rd->nxt->text + rd->rendOffs;
+            char* txt = rd->tmpnxt->text + rd->rendOffs;
             int len = strlen(txt);
-            int xtra = len >= scrWid-1;
+            int xtra = len >= scrWid;
             if (xtra) {
-                len = scrWid-2;
+                len = scrWid-1;
                 rd->rendOffs += len;
             } else {
-                rd->nxt = rd->nxt->next;
+                rd->tmpnxt = rd->tmpnxt->next;
                 rd->rendOffs = 0;
             }
             char* nstr = malloc(len+xtra+1);
             if (!nstr) { perror("malloc"); exit(EXIT_FAILURE); }
             strncpy(nstr, txt, len);
             if (xtra) {
-                nstr[len+1] = '\\';
+                nstr[len] = '\\';
             }
             return nstr;
     }
@@ -176,6 +177,7 @@ void scr_add(screenInfo* s, void* col, screenColTypes typ, screenColUses use) {
         tmpRendDat* newRD = malloc(sizeof(tmpRendDat));
         if (!newRD) { perror("malloc"); exit(EXIT_FAILURE); }
         newRD->nxt = ((textList*)col)->startIt;
+        newRD->tmpnxt = ((textList*)col)->startIt;
         ncol->renderData = newRD;
     }
 }
