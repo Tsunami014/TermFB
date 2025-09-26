@@ -32,6 +32,24 @@ void tryEdit(screenCol* s, char* tmpl, int cursorPos) {
     }
 }
 
+void findNselect(screenCol* s, char* toFind) {
+    // Now find where the 'select' is in the string to select that
+    textItem* it = ((textList*)s->data)->startIt;
+    int pos = 0;
+    int found = 0;
+    while (it != NULL && found == 0) {
+        if (strcmp(it->text, toFind) == 0) {
+            s->cursorY = pos;
+            found = 1;
+        }
+        pos++;
+        it = it->next;
+    }
+    if (!found) {
+        s->cursorY = 0;
+    }
+}
+
 char* runCmd(screenCol* s) {
     char* cmd;
     char* args;
@@ -182,21 +200,7 @@ char* runCmd(screenCol* s) {
             s->cursorY = newL->length-1;
         }
     } else {
-        // Now find where the 'select' is in the string to select that
-        textItem* it = newL->startIt;
-        int pos = 0;
-        int found = 0;
-        while (it != NULL && found == 0) {
-            if (strcmp(it->text, select) == 0) {
-                s->cursorY = pos;
-                found = 1;
-            }
-            pos++;
-            it = it->next;
-        }
-        if (!found) {
-            s->cursorY = 0;
-        }
+        findNselect(s, select);
     }
 
     free(cmd);
@@ -372,6 +376,7 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
                 }
                 char* fname = it->text;
                 if (fname[strlen(fname)-1] == '/') {
+                    char* select = NULL;
                     if (strcmp(fname, "./") == 0) {
                         return;
                     } else if (strcmp(fname, "../") == 0) {
@@ -390,6 +395,14 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
                                 index = index2;
                             }
                         }
+
+                        char* pth = dvi->path + index + 1;
+                        size_t len = strlen(pth);
+                        select = malloc(len + 2);
+                        if (!select) { perror("malloc"); exit(EXIT_FAILURE); }
+                        strcpy(select, pth);
+                        select[len] = '/';
+                        select[len + 1] = '\0';
 
                         char* npath = malloc(index+2);
                         strncpy(npath, dvi->path, index);
@@ -410,6 +423,10 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
                     tl.sort(s->data, tlSort.dirs);
                     dl.setup(s->data, npath);
                     blankHeader(s);
+                    if (select != NULL) {
+                        findNselect(s, select);
+                        free(select);
+                    }
                 }
                 return;
             }
