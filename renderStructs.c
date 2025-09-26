@@ -96,10 +96,17 @@ void SC_move_selection(screenCol* col, int chngRows) {
     int new = col->cursorY + chngRows;
     if (new <= 0) {
         new = 0;
+        if (chngRows < 0) {
+            new = SC_len(col) + chngRows;
+        }
     } else {
-        int max = SC_len(col)-1;
+        int max = SC_len(col) - 1;
         if (new > max) {
-            new = max;
+            if (chngRows > 0) {
+                new = chngRows - 1;
+            } else {
+                new = max;
+            }
         }
     }
     col->cursorY = new;
