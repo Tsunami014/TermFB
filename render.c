@@ -198,6 +198,7 @@ void init_help() {
         "  Ctrl+a to add (`mk <new>`)\n"
         "Action keys:\n"
         "  Up/down arrows (or tab/shift-tab keys) change selected item\n"
+        "  Shift+(up/down) goes to very top/bottom of list\n"
         "  Enter goes into selected directory (../ is go up a directory)\n"
         "  Type to filter (backspace/delete also works)\n"
         "  Left/right arrow keys to move cursor to aid in inputting in filter\n"
