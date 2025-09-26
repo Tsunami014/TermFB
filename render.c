@@ -127,6 +127,7 @@ void printScrn(screenInfo* screen) {
                     text = cutoff(text, totlen);
                 }
                 int xtralen = totlen-strlen(text);
+                if (xtralen < 0) xtralen = 0;
                 char extraSpaces[xtralen+1];
                 for (int i = 0; i < xtralen; i++) extraSpaces[i] = ' ';
                 extraSpaces[xtralen] = '\0';
@@ -145,7 +146,9 @@ void printScrn(screenInfo* screen) {
                 }
                 wcscat(fmt, xtra);
                 wprintf(fmt, text, extraSpaces);
-                free(text);
+                if (text != col->selectedTxt) {
+                    free(text);
+                }
             }
         }
     }
@@ -176,6 +179,7 @@ char* helpTxt;
 void init_help() {
     const char* template =
         "HELP\n"
+        "  (Enter to close, any button to see more)\n"
         "General keys:\n"
         "  Shift+(left/right) to switch column\n"
         "  ? shows this help screen\n"
@@ -210,9 +214,29 @@ void onExit(screenInfo* screen) {
     fflush(stdout);
     char* pth = ((dirViewInfo*)((textList*)screen->cols[1].data)->info)->path;
 #ifdef _WIN32
-    FILE *f = fopen("C:\\temp\\termfb_dir.txt", "w");
+    DWORD requiredSize = GetTempPathA(0, NULL);
+    char* tempPath = malloc(requiredSize);
+    if (!tempPath) { perror("malloc"); exit(EXIT_FAILURE); }
+
+    DWORD actualSize = GetTempPathA(requiredSize, tempPath);
+    if (actualSize == 0 || actualSize >= requiredSize) {
+        printf("Failed to get temp path.\n");
+        free(tempPath);
+        return;
+    }
+
+    // Build full path
+    const char* filename = "termfb_dir.txt";
+    size_t fullLen = strlen(tempPath) + strlen(filename) + 1;
+    char* filePath = malloc(fullLen);
+    if (!filePath) { perror("malloc"); exit(EXIT_FAILURE); }
+
+    snprintf(filePath, fullLen, "%s%s", tempPath, filename);
+    FILE *f = fopen(filePath, "w");
     fprintf(f, "%s\n", pth);
     fclose(f);
+    free(filePath);
+    free(tempPath);
 #else
     // Write to a special file descriptor the output directory for use in other programs
     int fd = 3;

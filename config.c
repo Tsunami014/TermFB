@@ -14,8 +14,9 @@
 const char* appName = "termFB";
 
 const char defaultConf[] = 
+    "~/\n"
     "~/Downloads/\n" "~/Documents/\n" "~/Pictures/\n" "~/Desktop/\n"
-    "~/\n"; 
+    ; 
 
 void create_dir_if_not_exists(const char *path) {
 #ifdef _WIN32

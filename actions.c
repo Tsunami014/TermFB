@@ -43,6 +43,7 @@ char* runCmd(screenCol* s) {
         return strdup("Must confirm removal with 'rmy'");
     }
     char* select = "";
+    int selectNeedsToBeFreed = 0;
     char* fstTok = strdup(tok);
     if (strcmp(fstTok, "rmy") == 0 || strcmp(fstTok, "mk") == 0) {
         tok = strtok(NULL, " ");
@@ -62,11 +63,23 @@ char* runCmd(screenCol* s) {
             if (isdir) {
                 cmd = strdup("mkdir");
             } else {
+#ifdef _WIN32
+                cmd = strdup("type nul >");
+#else
                 cmd = strdup("touch");
+#endif
             }
             select = args;
         } else {
+#ifdef _WIN32
+            if (isdir) {
+                cmd = strdup("rmdir /S /Q");
+            } else {
+                cmd = strdup("del /F /Q");
+            }
+#else
             cmd = strdup("rm -rf");
+#endif
         }
         tok = strtok(NULL, " ");
         if (tok != NULL) {
@@ -101,15 +114,26 @@ char* runCmd(screenCol* s) {
         strcpy(args, arg1);
         strcat(args, " ");
         strcat(args, arg2);
+        free(arg1);
+#ifdef _WIN32
+        if (strcmp(fstTok, "cp") == 0) {
+            cmd = strdup("xcopy /E /I /Y");
+        } else {
+            cmd = strdup("move /Y");
+        }
+#else
         if (strcmp(fstTok, "rn") == 0) {
             cmd = strdup("mv");
         } else {
             cmd = strdup(fstTok);
         }
+#endif
         char *p = strchr(arg2, '/');
         if (!(p && p != arg2 + strlen(arg2) - 1)) {  // If / is not in the string (for when moving across dirs) (skips if it's the last character, meaning it's a dir)
-            select = arg2;
+            select = strdup(arg2);
+            selectNeedsToBeFreed = 1;
         }
+        free(arg2);
     } else {
         free(fstTok);
         return strdup("Unknown command!");
@@ -117,7 +141,11 @@ char* runCmd(screenCol* s) {
     free(fstTok);
 
     char* pth = ((dirViewInfo*)((textList*)s->data)->info)->path;
-#define fmt "(cd %s;%s %s) 2>&1"
+#ifdef _WIN32
+    #define fmt "cd /d \"%s\" && %s %s 2>&1"
+#else
+    #define fmt "(cd %s;%s %s) 2>&1"
+#endif
     size_t needed = snprintf(NULL, 0, fmt, pth, cmd, args) + 1;
     char* fullCmd = malloc(needed);
     if (!fullCmd) { perror("malloc"); exit(EXIT_FAILURE); }
@@ -174,6 +202,7 @@ char* runCmd(screenCol* s) {
     free(cmd);
     free(args);
     free(fullCmd);
+    if (selectNeedsToBeFreed) free(select);
     return out;
 }
 
@@ -257,7 +286,7 @@ void blankHeader(screenCol* s) {
 void onKeyPress(screenInfo* screen, screenCol* s, char key) {
     if (s->typ == TEMPORARY) {
         tmpRendDat* rd = s->renderData;
-        if (rd->nxt == NULL || rd->nxt->next == NULL) {
+        if (rd->nxt == NULL || rd->nxt->next == NULL || key == '\n' || key == '\r') {
             if (screen->cursorCol >= --screen->length) {
                 screen->cursorCol = screen->length-1;
             }
@@ -326,6 +355,13 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
                             index = (size_t)(last - dvi->path);
                         } else {
                             index = 0;
+                        }
+                        const char *last2 = strrchr(dvi->path, '\\');
+                        if (last2) {
+                            size_t index2 = (size_t)(last2 - dvi->path);
+                            if (index2 > index) {
+                                index = index2;
+                            }
                         }
 
                         char* npath = malloc(index+2);

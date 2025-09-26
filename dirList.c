@@ -16,7 +16,7 @@ void dl_setup(textList* d, char* path) {
 textList* dl_filter(textList* d, char* filter) {
     textList* nd = tl.filter(d, filter);
     dl_setup(nd, ((dirViewInfo*)d->info)->path);
-    return d;
+    return nd;
 }
 
 textList* dl_copy(textList* d) {

@@ -55,9 +55,13 @@ char* SC_step(screenCol* col, int scrWid) {
             }
             char* nstr = malloc(len+xtra+1);
             if (!nstr) { perror("malloc"); exit(EXIT_FAILURE); }
-            strncpy(nstr, txt, len);
+            while (len > 0 && (txt[len-1] == '\r')) len--;
+            memcpy(nstr, txt, len);
             if (xtra) {
                 nstr[len] = '\\';
+                nstr[len + 1] = '\0';
+            } else {
+                nstr[len] = '\0';
             }
             return nstr;
     }
@@ -124,11 +128,10 @@ void SC_free(screenCol* col) {
         free(col->selectedTxt);
     }
     switch (col->typ) {
-        case WORDLIST:
-            tl.free(col->data);
-            break;
         case TEMPORARY:
             free(col->renderData);
+        case WORDLIST:
+            tl.free(col->data);
             break;
     }
 }
@@ -227,6 +230,7 @@ const struct scrDefStruct scr = {
 void makeTempCol(screenInfo* screen, char* txt, screenColUses use) {
     for (int i = 0; i < screen->length; i++) {
         if (screen->cols[i].use == use) {
+            free(txt);
             return;  // No duplicate screens
         }
     }

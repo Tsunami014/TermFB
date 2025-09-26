@@ -85,6 +85,9 @@ int moreInp(void) {
 keyReturn* getKey() {
 #ifdef _WIN32
     int chr = _getch();
+    if (chr == 13) {  // Convert carriage return to newline
+        chr = '\n';
+    }
     if (chr == 0 || chr == 0xE0) {  // special key prefix
         int code = _getch();
         char escKey = '\0';

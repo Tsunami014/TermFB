@@ -4,6 +4,7 @@
 #include <wchar.h>
 #ifdef _WIN32
     #include <windows.h>
+    #include <direct.h>
 #else
     #include <sys/ioctl.h>
     #include <unistd.h>

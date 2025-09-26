@@ -124,8 +124,12 @@ int sortDirs(textItem** a, textItem** b) {
     const char *ta = (*a)->text;
     const char *tb = (*b)->text;
 
-    if (strcmp(ta, "../") == 0) return -1;  // a forced in front
-    if (strcmp(tb, "../") == 0) return 1;    // b forced in front
+    // Force ../ and ./ to the top
+    if (strcmp(ta, "../") == 0) return -1;
+    if (strcmp(tb, "../") == 0) return 1;
+    if (strcmp(ta, "./") == 0) return -1;
+    if (strcmp(tb, "./") == 0) return 1;
+    // Case-insensitive comparison
 #ifdef _WIN32
     return _stricmp(ta, tb);
 #else

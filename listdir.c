@@ -15,19 +15,32 @@
 textList* list_dir(char* path) {
     textList* dir = tl.init();
 #if defined(_WIN32)
+    char* fixedPth = strdup(path);
+    for (int i = 0; i < strlen(fixedPth); i++) {
+        if (fixedPth[i] == '/') fixedPth[i] = '\\';
+    }
     WIN32_FIND_DATA fd;
-    char pattern[MAX_PATH];
-    snprintf(pattern, sizeof pattern, "%s\\*", path);
+    char pattern[strlen(fixedPth)+3]; /* +2 for \* +1 for \0 */
+    if (fixedPth[strlen(fixedPth)-1] != '\\') {
+        snprintf(pattern, sizeof pattern, "%s\\*", fixedPth);
+    } else {
+        snprintf(pattern, sizeof pattern, "%s*", fixedPth);
+    }
+    free(fixedPth);
     HANDLE h = FindFirstFile(pattern, &fd);
     if (h == INVALID_HANDLE_VALUE) {
-        DWORD err = GetLastError();
         tl.add(dir, "../");
         return dir;
     }
+    if (strlen(path) <= 3) {  // Bcos C:/ is 3 characters
+        tl.add(dir, "./");
+    }
     do {
         char* name = fd.cFileName;
-        if (strcmp(name, ".") == 0) continue;
-        if (strcmp(name, "..") == 0 && strlen(path) <= 3) continue;  // Bcos C:/ is 3 characters
+        if (strlen(path) <= 3) {  // Bcos C:/ is 3 characters
+            if (strcmp(name, "..") == 0) continue;
+        }
+        if (strcmp(name, ".") == 0) continue;  // Any extra ./s will be removed (already added one at the start where required)
 
         char namebuf[strlen(name)+2]; /* +1 for '/' +1 for '\0' */
         if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
@@ -50,7 +63,7 @@ textList* list_dir(char* path) {
     int baseSze = strlen(path)+2;
     while ((ent = readdir(d)) != NULL) {
         char* name = ent->d_name;
-        if (strcmp(name, ".") == 0) continue;
+        if (strcmp(name, ".") == 0 && baseSze > 3) continue;
         char fullpath[baseSze+strlen(name)];
         sprintf(fullpath, "%s%s", path, name);
         if (strcmp(fullpath, "/..") == 0) continue;
