@@ -33,6 +33,8 @@ alias tfb='cd "$(./termfb 3>&1 1>&2)"'
 ### Windows
 Because Windows is... Windows, I could not figure out an easy way to accomplish this for both powershell and command prompt. ~~Sucks to be you.~~ You *can* make some powershell function, but that's your problem.
 
+But to anyone who wants to make something for this, every time you exit this program it saves the path to a file `%temp%/termfb_dir.txt`.
+
 ## AI Usage
 As I have barely used C before this, I used chatGPT for learning how to do stuff; basically just a second Google. I did take entire chunks of code for platform specific things, those being getting a single character input, reading folders, setting the terminal to the right modes and finding a configuration directory; all this because I was crazy enough to not have any external libraries. But I wrote over quite a lot of that, and everything else was all of my own creation.
 
