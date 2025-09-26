@@ -286,13 +286,40 @@ void blankHeader(screenCol* s) {
 void onKeyPress(screenInfo* screen, screenCol* s, char key) {
     if (s->typ == TEMPORARY) {
         tmpRendDat* rd = s->renderData;
-        if (rd->nxt == NULL || rd->nxt->next == NULL || key == '\n' || key == '\r') {
+        if (rd->nxt == NULL || rd->nxt->next == NULL || key == '\033') {
             if (screen->cursorCol >= --screen->length) {
                 screen->cursorCol = screen->length-1;
             }
             SC.free(s);
         } else {
             rd->nxt = rd->nxt->next;
+        }
+        return;
+    }
+    if (key == '\033') {
+        if (s->selectingRow) {
+            s->selectingRow = 0;
+            s->cursorX = s->lastCursorX;
+            free(s->selectedTxt);
+            s->selectedTxt = NULL;
+            textList* dat = s->data;
+            if (dat->endIt->text[0] == '\0') {  // If it was empty to begin with (a temporary one added by 'mk')
+                free(dat->endIt->text);
+                free(dat->endIt);
+                if (dat->length == 1) {
+                    dat->startIt = NULL;
+                    dat->endIt = NULL;
+                    dat->length = 0;
+                } else {
+                    textItem* newEnd = tl.get(dat, dat->length-2);
+                    newEnd->next = NULL;
+                    dat->endIt = newEnd;
+                    dat->length--;
+                    if (s->cursorY >= dat->length) {
+                        s->cursorY--;
+                    }
+                }
+            }
         }
         return;
     }
@@ -459,6 +486,11 @@ void onArrowPress(screenInfo* screen, screenCol* s, char arrow) {
                 case 'd':  // Down arrow
                     SC.mvSelect(s, 1);
                     return;
+                case 'U':  // Go to top
+                    s->cursorY = 0;
+                    return;
+                case 'D':  // Go to bottom
+                    s->cursorY = SC.len(s)-1;
                 case 'l':
                     SC.mvHCurs(s, -1);
                     return;

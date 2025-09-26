@@ -224,6 +224,7 @@ returnEscape:;
     keyReturn* esckr = malloc(sizeof(keyReturn));
     if (!esckr) { perror("malloc"); exit(EXIT_FAILURE); }
     esckr->typ = ESCAPE_KEY;
+    esckr->key = '\033';
     return esckr;
 }
 

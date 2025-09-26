@@ -179,7 +179,8 @@ char* helpTxt;
 void init_help() {
     const char* template =
         "HELP\n"
-        "  (Enter to close, any button to see more)\n"
+        "  (Esc to close, any button to see more)\n"
+        "  Your config file is located in: " A "\n"
         "General keys:\n"
         "  Shift+(left/right) to switch column\n"
         "  ? shows this help screen\n"
@@ -200,8 +201,7 @@ void init_help() {
         "  Enter goes into selected directory (../ is go up a directory)\n"
         "  Type to filter (backspace/delete also works)\n"
         "  Left/right arrow keys to move cursor to aid in inputting in filter\n"
-
-        "\nYour config file is located in: " A "\n";
+        ;
     size_t bufsize = strlen(template) + strlen(confPath) + 1;
     helpTxt = malloc(bufsize);
     if (!helpTxt) { perror("malloc"); exit(EXIT_FAILURE); }
@@ -239,15 +239,9 @@ void onExit(screenInfo* screen) {
     free(tempPath);
 #else
     // Write to a special file descriptor the output directory for use in other programs
-    int fd = 3;
-    FILE *f = fdopen(fd, "w");
-    if (!f) {
-        perror("fdopen");
-        return;
-    }
-    fprintf(f, "%s\n", pth);
-    fflush(f);
-    fclose(f);
+#define fd 3
+    write(fd, pth, strlen(pth));
+    write(fd, "\n", 1);
 #endif
 }
 
