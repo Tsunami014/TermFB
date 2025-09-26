@@ -62,6 +62,24 @@ int main(void) {
                     s->cursorX = s->lastCursorX;
                     free(s->selectedTxt);
                     s->selectedTxt = NULL;
+                    textList* dat = s->data;
+                    if (dat->endIt->text[0] == '\0') {  // If it was empty to begin with (a temporary one added by 'mk')
+                        free(dat->endIt->text);
+                        free(dat->endIt);
+                        if (dat->length == 1) {
+                            dat->startIt = NULL;
+                            dat->endIt = NULL;
+                            dat->length = 0;
+                        } else {
+                            textItem* newEnd = tl.get(dat, dat->length-2);
+                            newEnd->next = NULL;
+                            dat->endIt = newEnd;
+                            dat->length--;
+                            if (s->cursorY >= dat->length) {
+                                s->cursorY--;
+                            }
+                        }
+                    }
                 }
                 break;
             case REGULAR_KEY:

@@ -42,6 +42,7 @@ char* runCmd(screenCol* s) {
     if (strcmp(tok, "rm") == 0) {
         return strdup("Must confirm removal with 'rmy'");
     }
+    char* select = "";
     char* fstTok = strdup(tok);
     if (strcmp(fstTok, "rmy") == 0 || strcmp(fstTok, "mk") == 0) {
         tok = strtok(NULL, " ");
@@ -56,16 +57,17 @@ char* runCmd(screenCol* s) {
             isdir = 0;
         }
 
+        args = strdup(tok);
         if (strcmp(fstTok, "mk") == 0) {
             if (isdir) {
                 cmd = strdup("mkdir");
             } else {
                 cmd = strdup("touch");
             }
+            select = args;
         } else {
             cmd = strdup("rm -rf");
         }
-        args = strdup(tok);
         tok = strtok(NULL, " ");
         if (tok != NULL) {
             free(args);
@@ -104,6 +106,10 @@ char* runCmd(screenCol* s) {
         } else {
             cmd = strdup(fstTok);
         }
+        char *p = strchr(arg2, '/');
+        if (!(p && p != arg2 + strlen(arg2) - 1)) {  // If / is not in the string (for when moving across dirs) (skips if it's the last character, meaning it's a dir)
+            select = arg2;
+        }
     } else {
         free(fstTok);
         return strdup("Unknown command!");
@@ -117,7 +123,6 @@ char* runCmd(screenCol* s) {
     if (!fullCmd) { perror("malloc"); exit(EXIT_FAILURE); }
     snprintf(fullCmd, needed, fmt, pth, cmd, args);
 
-    // TODO: Allow for deletion to recycle bin
     FILE *p = popen(fullCmd, "r");
     if (!p) return NULL;
     FILE *tmp = tmpfile();
@@ -138,13 +143,37 @@ char* runCmd(screenCol* s) {
     out[total] = '\0';
     fclose(tmp);
 
-    free(cmd);
-    free(args);
-    free(fullCmd);
     textList* newL = list_dir(pth);  // Do this before freeing so the path doesn't turn to mush
     tl.sort(newL, tlSort.dirs);
     dl.free(s->data);
     s->data = newL;
+
+    // Make cursor select new/edited item or ensure cursor is correct if deleting.
+    if (select[0] == '\0') {
+        if (s->cursorY >= newL->length) {
+            s->cursorY = newL->length-1;
+        }
+    } else {
+        // Now find where the 'select' is in the string to select that
+        textItem* it = newL->startIt;
+        int pos = 0;
+        int found = 0;
+        while (it != NULL && found == 0) {
+            if (strcmp(it->text, select) == 0) {
+                s->cursorY = pos;
+                found = 1;
+            }
+            pos++;
+            it = it->next;
+        }
+        if (!found) {
+            s->cursorY = 0;
+        }
+    }
+
+    free(cmd);
+    free(args);
+    free(fullCmd);
     return out;
 }
 
@@ -267,9 +296,9 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
                     char* out = runCmd(s);
                     if (out[0] == '\0') {
                         free(out);
-                        out = strdup("Success!");  // No news is good news
+                    } else {
+                        makeTempCol(screen, out, NOUSE);
                     }
-                    makeTempCol(screen, out, NOUSE);
                     s->selectingRow = 0;
                     s->cursorX = s->lastCursorX;
                     free(s->selectedTxt);

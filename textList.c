@@ -102,6 +102,7 @@ void tl_free(textList* l) {
     textItem* it = l->startIt;
     while (it != NULL) {
         textItem* next = it->next;
+        free(it->text);
         free(it);
         it = next;
     }
