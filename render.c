@@ -189,7 +189,7 @@ void init_help() {
         "  Ctrl+r to rename (`rn <orig> <newname>`)\n"
         "  Ctrl+c to copy (`cp <orig> <new>`)\n"
         "  Ctrl+m to move (`mv <orig> <new>`) (can move between directories)\n"
-        "  Ctrl+d to delete (`rm <orig>`)\n"
+        "  Ctrl+d to delete (`rmy <orig>`) (PLEASE NOTE it defaults to 'rm', you will have to type in the 'y' to confirm)\n"
         "  Ctrl+a to add (`mk <new>`)\n"
         "Action keys:\n"
         "  Up/down arrows (or tab/shift-tab keys) change selected item\n"

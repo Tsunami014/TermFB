@@ -39,14 +39,18 @@ char* runCmd(screenCol* s) {
     if (tok == NULL) {
         return strdup("Must have a command!");
     }
+    if (strcmp(tok, "rm") == 0) {
+        return strdup("Must confirm removal with 'rmy'");
+    }
     char* fstTok = strdup(tok);
-    if (strcmp(fstTok, "rm") == 0 || strcmp(fstTok, "mk") == 0) {
+    if (strcmp(fstTok, "rmy") == 0 || strcmp(fstTok, "mk") == 0) {
         tok = strtok(NULL, " ");
         if (tok == NULL) {
+            free(fstTok);
             return strdup("Must have 1 argument, found 0!");
         }
         int isdir;
-        if (tok[strlen(tok)] == '/') {
+        if (tok[strlen(tok) - 1] == '/') {
             isdir = 1;
         } else {
             isdir = 0;
@@ -245,7 +249,7 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
                 return;
             }
             if (key == toCtrl('d')) {
-                tryEdit(s, "rm %s", -1);
+                tryEdit(s, "rm %s", 2);
                 return;
             }
             if (key == toCtrl('c')) {
@@ -260,7 +264,12 @@ void onKeyPress(screenInfo* screen, screenCol* s, char key) {
             }
             if (key == '\n' || key == '\r') {
                 if (s->selectingRow) {
-                    makeTempCol(screen, runCmd(s), NOUSE);
+                    char* out = runCmd(s);
+                    if (out[0] == '\0') {
+                        free(out);
+                        out = strdup("Success!");  // No news is good news
+                    }
+                    makeTempCol(screen, out, NOUSE);
                     s->selectingRow = 0;
                     s->cursorX = s->lastCursorX;
                     free(s->selectedTxt);
